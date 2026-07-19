@@ -68,7 +68,7 @@ git branch -M main
 :: Push changes to GitHub
 echo [INFO] Pushing changes to remote repository on branch 'main'...
 echo [INFO] Note: If prompted, please complete authentication in the browser or command prompt.
-git push -u origin main
+git push -f -u origin main
 if errorlevel 1 (
     echo.
     echo [ERROR] Git push failed. 
