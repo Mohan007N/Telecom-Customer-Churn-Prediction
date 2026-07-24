@@ -5,94 +5,106 @@ Data Cleaning Module
 Author: Machine Learning Engineer
 Description: Handles dataset loading, duplicate removal, invalid data
              detection, and dtype conversions (specifically TotalCharges).
+             Raw CSV is never mutated — all operations stay in memory.
+
+Fix applied:
+  - Removed redundant double pd.read_csv() call.
+    Now uses a single read with na_values=[" "] to handle blank strings.
+  - Replaced all print() with structured logging.
 =============================================================
 """
 
 import pandas as pd
 import numpy as np
+import os
+
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 def load_and_clean_data(file_path: str) -> pd.DataFrame:
     """
     Loads the raw dataset, checks shapes and datatypes, handles duplicates,
     converts TotalCharges to float, and handles missing/blank values.
-    
+
     Parameters:
     -----------
     file_path : str
         Path to the raw CSV file.
-        
+
     Returns:
     --------
     pd.DataFrame
         Cleaned and validated DataFrame.
+
+    Notes:
+    ------
+    - The raw CSV on disk is NEVER modified. All mutations stay in memory.
+    - Blank strings in TotalCharges are treated as NaN and imputed with median.
     """
-    print("\n=========================================")
-    print("🧹 [DATA CLEANING] Executing Cleaning Step...")
-    print("=========================================")
-    
-    # 1. Load Dataset
-    df = pd.read_csv(file_path, keep_default_na=False)
-    print(f"  ✔ Initial raw shape: {df.shape}")
-    
-    # Check and update the CSV file if "No internet service" is present
-    raw_changed = False
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            if (df[col] == "No internet service").any():
-                df[col] = df[col].replace("No internet service", "No")
-                raw_changed = True
-                
-    if raw_changed:
-        print(f"  🔄 Found 'No internet service' in raw dataset. Updating the CSV file '{file_path}' to use 'No'...")
-        df.to_csv(file_path, index=False)
-        # Reload with default behavior for subsequent numeric/na handling
-        df = pd.read_csv(file_path)
-    
-    # 2. Check and Remove Duplicates
+    logger.info("=========================================")
+    logger.info("🧹 [DATA CLEANING] Executing Cleaning Step...")
+    logger.info("=========================================")
+
+    # ── 1. Load Dataset ────────────────────────────────────────────────────
+    # FIX: single read with na_values=[" "] handles both pandas NA detection
+    # and blank-string coercion simultaneously — eliminates the previous
+    # redundant double pd.read_csv() call (old lines 42 & 57).
+    df = pd.read_csv(file_path, na_values=[" "])
+    logger.info(f"  ✔ Initial raw shape: {df.shape}")
+
+    # ── 2. In-memory categorical simplification ────────────────────────────
+    # NOTE: Raw CSV on disk is never written to.
+    replacements = {
+        "No internet service": "No",
+        "No phone service": "No"
+    }
+    for col in df.select_dtypes(include="str").columns:
+        df[col] = df[col].replace(replacements)
+    logger.info("  🔄 Replaced 'No internet service' and 'No phone service' → 'No' (in memory only).")
+
+    # ── 3. Remove Duplicates ───────────────────────────────────────────────
     duplicate_count = df.duplicated().sum()
     if duplicate_count > 0:
-        print(f"  ⚠️  Found {duplicate_count} duplicate records. Removing them...")
-        df.drop_duplicates(inplace=True)
+        logger.warning(f"  ⚠️  Found {duplicate_count} duplicate records. Removing them...")
+        df = df.drop_duplicates()
     else:
-        print("  ✔ No duplicate records found.")
-        
-    # 3. Handle TotalCharges blank strings and convert to float
-    # Spaces ' ' are a common issue for TotalCharges in this dataset.
-    print("  ✔ Verifying and converting 'TotalCharges' datatype...")
-    # Count blank space entries before conversion
-    blank_spaces = (df["TotalCharges"] == " ").sum()
-    print(f"  🔍 Found {blank_spaces} blank space entries in 'TotalCharges'.")
-    
-    # Coerce to numeric (converts spaces to NaN)
+        logger.info("  ✔ No duplicate records found.")
+
+    # ── 4. Handle TotalCharges → float ────────────────────────────────────
+    logger.info("  ✔ Verifying and converting 'TotalCharges' datatype...")
+    # na_values=[" "] in read_csv already coerced blanks to NaN; count them.
+    blank_count = df["TotalCharges"].isna().sum()
+    logger.debug(f"  🔍 Found {blank_count} NaN entries in 'TotalCharges' (blanks + genuine NaN).")
+
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-    
-    # Impute missing TotalCharges with median
     median_val = df["TotalCharges"].median()
-    df["TotalCharges"].fillna(median_val, inplace=True)
-    print(f"  ✔ Imputed missing 'TotalCharges' values with median: {median_val:.2f}")
-    
-    # 4. Simplify categories to remove redundant columns (multicollinearity)
-    print("  ✔ Simplifying categorical columns by mapping redundant sub-states...")
-    # Map "No internet service" to "No" for all Internet add-on features
-    no_internet_cols = [
-        "OnlineSecurity", "OnlineBackup", "DeviceProtection", 
+    df["TotalCharges"] = df["TotalCharges"].fillna(median_val)
+    logger.info(f"  ✔ Imputed missing 'TotalCharges' values with median: {median_val:.2f}")
+
+    # ── 5. Simplify internet/phone sub-categories (MultipleLines) ─────────
+    logger.info("  ✔ Simplifying categorical columns by mapping redundant sub-states...")
+    internet_cols = [
+        "OnlineSecurity", "OnlineBackup", "DeviceProtection",
         "TechSupport", "StreamingTV", "StreamingMovies"
     ]
-    for col in no_internet_cols:
+    for col in internet_cols:
         if col in df.columns:
             df[col] = df[col].replace("No internet service", "No")
-            
-    # Map "No phone service" to "No" for MultipleLines
     if "MultipleLines" in df.columns:
         df["MultipleLines"] = df["MultipleLines"].replace("No phone service", "No")
-        
-    # 5. Check for any other null values
-    other_nulls = df.isnull().sum().sum()
-    if other_nulls > 0:
-        print(f"  ⚠️  Found {other_nulls} null values in other columns. Handling...")
-        df.dropna(inplace=True) # drop or impute
+
+    # ── 6. Final null check ────────────────────────────────────────────────
+    other_nulls = df.isnull().sum()
+    cols_with_nulls = other_nulls[other_nulls > 0]
+    if len(cols_with_nulls) > 0:
+        logger.warning(
+            f"  ⚠️  Found null values in: {cols_with_nulls.to_dict()}. Dropping affected rows..."
+        )
+        df = df.dropna()
     else:
-        print("  ✔ No other null values detected.")
-        
-    print(f"  ✔ Final clean dataset shape: {df.shape}")
+        logger.info("  ✔ No other null values detected.")
+
+    logger.info(f"  ✔ Final clean dataset shape: {df.shape}")
     return df

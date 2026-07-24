@@ -1,88 +1,80 @@
-# MLOps Telco Customer Churn Prediction Pipeline
+# Churn Predictor — Telecom Customer Churn Prediction Platform
 
-This repository contains a production-ready, modular machine learning pipeline using **XGBoost** to predict customer churn based on the IBM Telco Customer Churn dataset. It has been built following software engineering best practices for an MLOps project.
-
----
-
-## 📁 Project Folder Structure
-
-```text
-mlops/
-├── data/                                 # Data storage
-│   ├── raw/                              # Place raw datasets here
-│   └── processed/                        # Automated train/test preprocessed splits (CSVs)
-├── models/                               # Saved serializations
-│   └── xgboost_churn_model.pkl           # Saved XGBoost classifier binary (joblib)
-├── reports/                              # Generated artifacts
-│   ├── plots/                            # Plot graphs (distribution, heatmap, feature importance, etc.)
-│   └── metrics.json                      # Performance score tracking file
-├── src/                                  # Source modules
-│   ├── __init__.py
-│   ├── data_cleaning.py                  # Cleaning, duplicates & dtype handling
-│   ├── eda.py                            # Summary statistics and seaborn plotting
-│   ├── feature_engineering.py            # Creating derived features, scaling, splitting
-│   ├── training.py                       # XGBoost model training and serialization logic
-│   └── evaluation.py                     # Performance reporting & feature importance
-├── main.py                               # Main pipeline orchestrator
-├── run_training.bat                      # Windows double-clickable automation script
-├── requirements.txt                      # Project dependencies file
-├── xgboost_churn_model.pkl               # Copy of the trained model in project root
-└── README.md                             # Project documentation
-```
+A **production-ready, modular full-stack MLOps application** for Telecom Customer Churn prediction, featuring a clean enterprise light-theme React dashboard, modular FastAPI backend, in-memory XGBoost model loading, and high-speed CSV batch processing.
 
 ---
 
-## ⚡ How to Run
+## 🚀 Quick Start (All-in-One Launcher)
 
-### 1. Installation
-Install the necessary python modules via the terminal:
-```bash
-pip install -r requirements.txt
+Double-click or execute from shell:
+```bat
+start_all.bat
 ```
 
-### 2. Run the Full Orchestrated Pipeline
-Execute the orchestrator:
-```bash
-python main.py
-```
-*Alternatively (on Windows), double-click the **`run_training.bat`** file.*
+This will automatically:
+1. Verify ML model artifacts (`models/xgboost_churn_model.pkl`) and run training pipeline if missing.
+2. Launch the **FastAPI Backend Service** on `http://localhost:8000`.
+3. Launch the **React Light-Theme Dashboard** on `http://localhost:5173`.
 
 ---
 
-## 🔍 Pipeline Steps
+## 📱 Application Pages & Navigation
 
-### 1. Data Cleaning
-- Converts `TotalCharges` to numeric.
-- Identifies and handles blank/missing spaces in `TotalCharges` using median imputation.
-- Identifies and drops duplicate entries.
+- **Landing Page (`/`)**: Hero section with title *"Telecom Customer Churn Prediction Platform"*, feature cards, MLOps workflow, and footer.
+- **Dashboard Home (`/dashboard`)**: Total predictions, Churn vs Retained customer stats, Model Accuracy, and recent prediction logs.
+- **Single Prediction (`/dashboard/single`)**: Comprehensive customer attribute form (Tenure, Charges, Services, Contract) with real-time churn risk tier assessment.
+- **Batch CSV Upload (`/dashboard/batch`)**: Drag & drop CSV file upload, preview 10 rows, column validation, progress indicator, batch predictions, and downloadable `prediction_results.csv`.
+- **Prediction History (`/dashboard/history`)**: Filterable audit log of customer predictions.
+- **Model Performance (`/dashboard/performance`)**: 78.5% Accuracy, 70.6% Recall, 0.845 ROC-AUC score, and 2x2 confusion matrix grid.
+- **Settings (`/dashboard/settings`)**: API connection settings and model decision threshold slider ($\tau = 0.61$).
 
-### 2. Exploratory Data Analysis (EDA)
-- Displays summary statistics for both categorical and numerical variables.
-- Generates and exports plots to `reports/plots/`:
-  - `churn_distribution.png` (displays relative class balance)
-  - `monthly_charges_vs_churn.png` (stacked monthly price histograms)
-  - `tenure_vs_churn.png` (tenure length boxplot comparisons)
-  - `correlation_heatmap.png` (relationships between numeric features and Churn)
+---
 
-### 3. Feature Engineering
-- **Derived Feature `TotalServices`**: Counts the number of active services a customer has subscribed to out of 9 options.
-- **Derived Feature `TenureCohort`**: Groups tenure length into intervals (`0-1 Year`, `1-2 Years`, `2-4 Years`, `4+ Years`) representing logical contract periods.
-- **Derived Feature `ChargesRatio`**: Captures monthly expense intensity relative to lifetime payments.
-- One-hot encodes all categorical factors.
-- Applies standard scaling (`StandardScaler`) to continuous features.
-- Performs an 80/20 train/test split, stratified by the target label (`Churn`).
+## ⚡ FastAPI Backend Endpoints
 
-### 4. XGBoost Model Training
-Trains the `XGBClassifier` using the following hyperparameters:
-- `n_estimators=200`: Optimizes tree count.
-- `max_depth=4`: Avoids complex rules and prevents overfitting.
-- `learning_rate=0.05`: Step-size shrinkage.
-- `subsample=0.8` & `colsample_bytree=0.8`: Regularizes feature/sample selections.
+- `POST /api/v1/predict` (or `/predict`): Single customer prediction
+- `POST /api/v1/predict-batch` (or `/predict-batch`): Batch CSV upload & prediction
+- `GET /api/v1/download-batch-results/{file_id}`: Download generated prediction results CSV
+- `GET /api/v1/health` (or `/health`): System and model health check
+- `GET /api/v1/metrics` (or `/metrics`): Classification metrics (Accuracy, Precision, Recall, F1, ROC-AUC)
+- `GET /api/v1/model-info` (or `/model-info`): Model architecture details
 
-### 5. Model Evaluation
-- Computes Accuracy, Precision, Recall, F1, and ROC-AUC.
-- Generates and exports evaluation plots:
-  - `confusion_matrix.png`
-  - `roc_curve.png`
-  - `feature_importance.png` (visualizes feature importance by gain weight)
-- Saves final score values to `reports/metrics.json` for MLOps tracking.
+---
+
+## 📁 Clean Project Structure
+
+```
+Telecom-Churn-Prediction/
+├── backend/                  # Modular FastAPI backend
+│   └── app/
+│       ├── api/              # API Route endpoints (/predict, /predict-batch, etc.)
+│       ├── core/             # Configuration & Singleton Model Loader
+│       ├── schemas/          # Pydantic data validation schemas
+│       ├── services/         # Single & Batch Prediction service logic
+│       └── main.py           # Production FastAPI entrypoint
+│
+├── frontend/                 # Clean Light-Theme React Enterprise Dashboard
+│   └── src/
+│       ├── components/       # Navbar, Sidebar, Card components
+│       ├── layouts/          # DashboardLayout wrapper
+│       ├── pages/            # LandingPage, DashboardHome, SinglePrediction, BatchPrediction, etc.
+│       └── services/         # Axios API client
+│
+├── models/                   # Serialized ML Model Artifacts
+│   ├── xgboost_churn_model.pkl
+│   ├── scaler.pkl
+│   └── feature_metadata.json
+│
+├── reports/                  # Metrics JSON & Plot graphics
+│   ├── metrics.json
+│   └── plots/
+│
+├── src/                      # ML Model Training Pipeline
+│   ├── data_cleaning.py
+│   ├── feature_engineering.py
+│   ├── training.py
+│   └── evaluation.py
+│
+├── main.py                   # ML Pipeline Orchestrator
+└── start_all.bat             # Production Launcher
+```

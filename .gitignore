@@ -115,3 +115,10 @@ active/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Database & Temp files
+*.db
+*.db-shm
+*.db-wal
+temp_downloads/
+

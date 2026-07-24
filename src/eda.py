@@ -5,6 +5,9 @@ Exploratory Data Analysis (EDA) Module
 Author: Machine Learning Engineer
 Description: Computes summary statistics and generates visualizations
              of churn factors, saving figures to reports/plots/.
+
+Fix applied:
+  - Replaced all print() with structured logging.
 =============================================================
 """
 
@@ -13,66 +16,67 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
+
 def perform_eda(df: pd.DataFrame, output_dir: str = "reports/plots") -> None:
     """
     Computes statistical summaries and generates informative plots,
     exporting them to the specified directory.
-    
+
     Parameters:
     -----------
     df : pd.DataFrame
-        Cleaned dataset.
+        Cleaned dataset (before feature engineering).
     output_dir : str
         Directory where generated plots will be saved.
     """
-    print("\n=========================================")
-    print("📊 [EDA] Performing Exploratory Analysis...")
-    print("=========================================")
-    
-    # Ensure plot directory exists
+    logger.info("=========================================")
+    logger.info("📊 [EDA] Performing Exploratory Analysis...")
+    logger.info("=========================================")
+
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # 1. Summary Statistics
-    print("  🔍 Numerical Summary Statistics:")
-    print(df.describe().T.to_string())
-    print("\n  🔍 Categorical Summary Statistics:")
-    print(df.describe(include=['O']).T.to_string())
-    
-    # Set plotting style
+    logger.info("  🔍 Numerical Summary Statistics:")
+    logger.debug("\n" + df.describe().T.to_string())
+    logger.info("  🔍 Categorical Summary Statistics:")
+    logger.debug("\n" + df.describe(include="object").T.to_string())
+
     sns.set_theme(style="whitegrid", palette="muted")
-    
-    # 2. Churn Distribution Plot
+
+    # 2. Churn Distribution
     plt.figure(figsize=(6, 5))
     ax = sns.countplot(x="Churn", data=df, hue="Churn", legend=False)
     plt.title("Customer Churn Distribution", fontsize=14, fontweight="bold", pad=15)
     plt.xlabel("Churn Status", fontsize=12)
     plt.ylabel("Customer Count", fontsize=12)
-    
-    # Add count annotations
     for p in ax.patches:
-        ax.annotate(f'{int(p.get_height())}', 
-                    (p.get_x() + p.get_width() / 2., p.get_height()), 
-                    ha='center', va='baseline', fontsize=11, fontweight='semibold',
-                    xytext=(0, 5), textcoords='offset points')
-                    
+        ax.annotate(
+            f'{int(p.get_height())}',
+            (p.get_x() + p.get_width() / 2., p.get_height()),
+            ha='center', va='baseline', fontsize=11, fontweight='semibold',
+            xytext=(0, 5), textcoords='offset points'
+        )
     churn_dist_path = os.path.join(output_dir, "churn_distribution.png")
     plt.tight_layout()
     plt.savefig(churn_dist_path, dpi=150)
     plt.close()
-    print(f"  ✔ Saved churn distribution plot to '{churn_dist_path}'")
-    
-    # 3. Monthly Charges vs Churn (Numerical Feature Check)
+    logger.info(f"  ✔ Saved churn distribution plot to '{churn_dist_path}'")
+
+    # 3. Monthly Charges vs Churn
     plt.figure(figsize=(8, 5))
     sns.histplot(data=df, x="MonthlyCharges", hue="Churn", multiple="stack", kde=True, bins=30)
     plt.title("Monthly Charges Distribution by Churn", fontsize=14, fontweight="bold", pad=15)
     plt.xlabel("Monthly Charges ($)", fontsize=12)
     plt.ylabel("Count", fontsize=12)
-    
     charges_dist_path = os.path.join(output_dir, "monthly_charges_vs_churn.png")
     plt.tight_layout()
     plt.savefig(charges_dist_path, dpi=150)
     plt.close()
-    print(f"  ✔ Saved Monthly Charges comparison to '{charges_dist_path}'")
+    logger.info(f"  ✔ Saved Monthly Charges comparison to '{charges_dist_path}'")
 
     # 4. Tenure vs Churn Boxplot
     plt.figure(figsize=(8, 5))
@@ -80,26 +84,39 @@ def perform_eda(df: pd.DataFrame, output_dir: str = "reports/plots") -> None:
     plt.title("Customer Tenure by Churn Status", fontsize=14, fontweight="bold", pad=15)
     plt.xlabel("Churn Status", fontsize=12)
     plt.ylabel("Tenure (Months)", fontsize=12)
-    
     tenure_box_path = os.path.join(output_dir, "tenure_vs_churn.png")
     plt.tight_layout()
     plt.savefig(tenure_box_path, dpi=150)
     plt.close()
-    print(f"  ✔ Saved Tenure vs Churn boxplot to '{tenure_box_path}'")
-    
-    # 5. Correlation Heatmap (only numerical features)
-    numerical_cols = df.select_dtypes(include=['int64', 'float64']).copy()
-    # Map Churn to 0/1 for correlation analysis
-    if "Churn" in df.columns and df["Churn"].dtype == 'O':
+    logger.info(f"  ✔ Saved Tenure vs Churn boxplot to '{tenure_box_path}'")
+
+    # 5. Correlation Heatmap (numerical features only)
+    numerical_cols = df.select_dtypes(include=["int64", "float64"]).copy()
+    if "Churn" in df.columns and df["Churn"].dtype == "object":
         numerical_cols["Churn"] = df["Churn"].map({"No": 0, "Yes": 1})
-        
+
     plt.figure(figsize=(8, 6))
     corr_matrix = numerical_cols.corr()
     sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, square=True)
     plt.title("Correlation Analysis Matrix", fontsize=14, fontweight="bold", pad=15)
-    
     corr_path = os.path.join(output_dir, "correlation_heatmap.png")
     plt.tight_layout()
     plt.savefig(corr_path, dpi=150)
     plt.close()
-    print(f"  ✔ Saved correlation heatmap to '{corr_path}'")
+    logger.info(f"  ✔ Saved correlation heatmap to '{corr_path}'")
+
+    # 6. Contract Type vs Churn
+    if "Contract" in df.columns:
+        plt.figure(figsize=(8, 5))
+        contract_churn = df.groupby(["Contract", "Churn"]).size().unstack(fill_value=0)
+        contract_churn.plot(kind="bar", stacked=False, colormap="Set2", edgecolor="white")
+        plt.title("Contract Type vs Churn", fontsize=14, fontweight="bold", pad=15)
+        plt.xlabel("Contract Type", fontsize=12)
+        plt.ylabel("Customer Count", fontsize=12)
+        plt.xticks(rotation=30, ha="right")
+        plt.legend(title="Churn", labels=["Retained", "Churned"])
+        contract_path = os.path.join(output_dir, "contract_vs_churn.png")
+        plt.tight_layout()
+        plt.savefig(contract_path, dpi=150)
+        plt.close()
+        logger.info(f"  ✔ Saved Contract vs Churn plot to '{contract_path}'")

@@ -1,0 +1,37 @@
+# =============================================================
+# MLOps Pipeline Configuration
+# =============================================================
+# Centralised hyperparameters and path settings.
+# Edit here instead of touching source code.
+# =============================================================
+
+model:
+  n_estimators: 300
+  max_depth: 3
+  learning_rate: 0.02
+  subsample: 0.8
+  colsample_bytree: 0.8
+  min_child_weight: 6
+  reg_lambda: 5.0
+  random_state: 42
+  eval_metric: logloss
+
+training:
+  test_size: 0.2
+  random_state: 42
+  cv_folds: 5              # StratifiedKFold folds for cross-validation
+  early_stopping_rounds: 30 # Stop if validation logloss doesn't improve
+  val_fraction: 0.1         # Fraction of X_train used as eval_set for early stopping
+  handle_imbalance: true
+
+data:
+  raw_data_path: WA_Fn-UseC_-Telco-Customer-Churn.csv
+  processed_dir: data/processed
+
+paths:
+  plots_dir: reports/plots
+  metrics_path: reports/metrics.json
+  model_output_path: models/xgboost_churn_model.pkl
+  scaler_output_path: models/scaler.pkl
+  metadata_dir: models
+  logs_dir: logs

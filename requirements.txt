@@ -1,7 +1,29 @@
-pandas>=1.5.0
-numpy>=1.20.0
-matplotlib>=3.5.0
-seaborn>=0.11.0
-scikit-learn>=1.0.0
-xgboost>=1.6.0
-joblib>=1.1.0
+# =============================================================
+# Pinned Dependencies — Telco Churn MLOps Project
+# =============================================================
+# Exact versions pinned for reproducible environments.
+# To upgrade: test each package individually, then update here.
+# =============================================================
+
+# ── Core Data & ML ────────────────────────────────────────────
+pandas==3.0.1
+numpy==1.26.4
+scikit-learn==1.8.0
+xgboost==3.2.0
+joblib==1.5.3
+
+# ── Visualisation ─────────────────────────────────────────────
+matplotlib==3.10.8
+seaborn==0.13.2
+
+# ── Serving (FastAPI inference API) ───────────────────────────
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# ── Configuration ─────────────────────────────────────────────
+pyyaml==6.0.2          # Required for config.yaml loading
+
+# ── Testing ───────────────────────────────────────────────────
+pytest==8.3.5
+pytest-cov==6.1.0      # Coverage reporting: pytest --cov=src tests/
