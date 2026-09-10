@@ -44,9 +44,9 @@ echo       Done.
 :: ── Step 3: Install Frontend Node dependencies ───────────────
 echo.
 echo [3/3] Checking Node dependencies...
-if not exist "%ROOT%\automlops-ai\frontend\node_modules" (
+if not exist "%ROOT%\frontend\node_modules" (
     echo       Installing npm packages...
-    pushd "%ROOT%\automlops-ai\frontend"
+    pushd "%ROOT%\frontend"
     call npm install
     popd
 ) else (
@@ -60,14 +60,14 @@ echo.
 
 :: Service 1: FastAPI Backend (port 8000)
 echo   [1/2] Starting FastAPI Backend on http://localhost:8000 ...
-start "Churn Predictor Backend :8000" cmd /k "cd /d "%ROOT%\automlops-ai\backend" && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+start "Churn Predictor Backend :8000" cmd /k "cd /d "%ROOT%\backend" && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 :: Small delay
 timeout /t 2 /nobreak >nul
 
 :: Service 2: React Frontend (port 5173)
 echo   [2/2] Starting React Frontend on http://localhost:5173 ...
-start "Churn Predictor Frontend :5173" cmd /k "cd /d "%ROOT%\automlops-ai\frontend" && npm run dev"
+start "Churn Predictor Frontend :5173" cmd /k "cd /d "%ROOT%\frontend" && npm run dev"
 
 echo.
 echo =============================================================

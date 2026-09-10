@@ -122,3 +122,18 @@ Thumbs.db
 *.db-wal
 temp_downloads/
 
+# Node / Web
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+.cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
