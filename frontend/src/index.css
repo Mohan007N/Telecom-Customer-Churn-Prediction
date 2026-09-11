@@ -4,34 +4,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --gold: 42 53% 56%;
+    --gold-dark: 38 52% 41%;
+    --gold-light: 44 65% 72%;
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
   }
-}
 
-@layer base {
   * {
-    @apply border-gray-200;
+    @apply border-slate-200/80;
   }
+
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F8F9FB;
+    color: #0F172A;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .font-serif-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.015em;
   }
 }
 
@@ -41,25 +40,63 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #CBD5E1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #94A3B8;
 }
 
-/* Clean Card Utility */
-.card-clean {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+/* Classical Styling Utilities */
+.font-display {
+  font-family: 'Cinzel', Georgia, serif;
+  letter-spacing: 0.05em;
 }
 
-/* Transition utility */
-.transition-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.font-editorial {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Classical Luxury Card */
+.card-classical {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0.875rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-classical:hover {
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+  border-color: rgba(197, 160, 89, 0.4);
+}
+
+/* Gold Accent Line / Ribbon */
+.gold-accent-line {
+  background: linear-gradient(90deg, #C5A059 0%, #DFBA73 50%, #C5A059 100%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #0F172A 30%, #C5A059 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-badge {
+  background-color: #FDFBF7;
+  border: 1px solid rgba(197, 160, 89, 0.3);
+  color: #8C6D2B;
+}
+
+/* Elegant Table Row Hover */
+.table-row-classical:hover {
+  background-color: #FAFBFD;
 }

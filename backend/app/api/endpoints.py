@@ -16,6 +16,7 @@ from app.schemas.prediction import (
     ModelInfoResponse
 )
 from app.services.prediction_service import predict_single, process_batch_csv
+from app.services.analytics_service import get_dataset_analytics
 from app.core.model_loader import get_predictor
 from app.core.config import settings
 
@@ -124,3 +125,15 @@ async def get_model_info():
         f1_score=metrics.get("f1_score", 0.6354),
         feature_names=predictor.feature_names
     )
+
+
+@router.get("/analytics", summary="Retrieve real Telco customer cohort analytics and telemetry")
+async def get_dataset_cohort_analytics():
+    """
+    Returns full cohort breakdown, distributions, XGBoost feature importances,
+    and 12 scored real customer records.
+    """
+    try:
+        return get_dataset_analytics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analytics error: {str(e)}")

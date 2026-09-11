@@ -113,6 +113,23 @@ export const SinglePrediction: React.FC = () => {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
+  React.useEffect(() => {
+    const prefill = sessionStorage.getItem('prefill_customer')
+    if (prefill) {
+      try {
+        const parsed = JSON.parse(prefill)
+        sessionStorage.removeItem('prefill_customer')
+        setFormData((prev: any) => ({
+          ...prev,
+          ...parsed,
+          tenure: Number(parsed.tenure) || 0,
+          MonthlyCharges: Number(parsed.MonthlyCharges) || 0,
+          TotalCharges: Number(parsed.TotalCharges) || 0,
+        }))
+      } catch (e) {}
+    }
+  }, [])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     setFormData((prev: any) => ({

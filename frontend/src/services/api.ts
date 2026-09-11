@@ -29,4 +29,7 @@ export const churnAPI = {
 
   // Model Info: GET /model-info
   getModelInfo: () => api.get('/model-info'),
+
+  // Real Dataset & Model Analytics: GET /analytics
+  getAnalytics: () => api.get('/analytics'),
 }
