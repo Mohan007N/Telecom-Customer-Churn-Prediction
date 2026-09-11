@@ -50,9 +50,13 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-3 group">
               {/* Professional Corporate Logo */}
-              <div className="w-10 h-10 rounded-lg bg-[#0F172A] flex items-center justify-center text-white shadow-xs group-hover:bg-[#1E293B] transition-colors">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              <div className="w-9 h-9 rounded-lg bg-[#0F172A] flex items-center justify-center text-white shadow-xs group-hover:bg-[#1E293B] transition-colors">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 20h.01" />
+                  <path d="M7 20v-4" />
+                  <path d="M12 20v-8" />
+                  <path d="M17 20V8" />
+                  <path d="M22 4v16" />
                 </svg>
               </div>
               <div className="flex flex-col">
