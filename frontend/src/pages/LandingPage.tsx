@@ -135,38 +135,35 @@ export const LandingPage: React.FC = () => {
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
-              {/* Executive Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-full border border-slate-700 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>PRODUCTION MLOPS PLATFORM</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-indigo-300 font-mono">XGBoost v1.0</span>
+              {/* Corporate Status Pill */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-md border border-slate-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Production Retention Platform</span>
+                <span className="text-slate-300">•</span>
+                <span className="text-slate-600 font-mono">v1.0 Live</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
-                Telecom Customer <br />
-                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-800 bg-clip-text text-transparent">
-                  Churn Risk Intelligence
-                </span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.18]">
+                Telecom Customer Churn Risk & Retention Management
               </h1>
 
               {/* Sub-headline */}
-              <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-xl">
-                Identify high-risk customer cancellations with early-warning telemetry. In-memory XGBoost inference, automated CSV batch scoring, and financial retention analytics calibrated on <strong>7,043 verified accounts</strong>.
+              <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed max-w-xl">
+                Real-time risk scoring, early customer cancellation warning telemetry, automated batch CSV analytics, and revenue retention modeling.
               </p>
 
               {/* Executive Action Button Group */}
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-1">
                 
                 {/* Primary Button */}
                 <Link
                   to="/dashboard/single"
                   className="btn-primary"
                 >
-                  <UserCheck className="w-4 h-4 text-indigo-400" />
+                  <UserCheck className="w-4 h-4" />
                   <span>Evaluate Account Risk</span>
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-4 h-4 text-slate-300" />
                 </Link>
 
                 {/* Secondary Button */}
@@ -183,28 +180,28 @@ export const LandingPage: React.FC = () => {
                   to="/dashboard/batch"
                   className="btn-secondary"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+                  <FileSpreadsheet className="w-4 h-4 text-slate-500" />
                   <span>Batch CSV Engine</span>
                 </Link>
 
               </div>
 
-              {/* Verified Performance Metrics Strip */}
-              <div className="pt-8 grid grid-cols-4 gap-4 border-t border-slate-100">
+              {/* Performance Metrics Strip */}
+              <div className="pt-6 grid grid-cols-4 gap-4 border-t border-slate-200">
                 <div>
-                  <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums">78.50%</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">78.50%</div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">Test Accuracy</div>
                 </div>
                 <div>
-                  <div className="text-2xl sm:text-3xl font-bold text-indigo-600 font-mono-nums">70.59%</div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">Early Recall</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">70.59%</div>
+                  <div className="text-xs text-slate-500 font-medium mt-0.5">Recall Catch Rate</div>
                 </div>
                 <div>
-                  <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums">0.8446</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">0.8446</div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">ROC-AUC</div>
                 </div>
                 <div>
-                  <div className="text-2xl sm:text-3xl font-bold text-emerald-600 font-mono-nums">&lt;5ms</div>
+                  <div className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono-nums">&lt;5ms</div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">API Latency</div>
                 </div>
               </div>

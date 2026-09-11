@@ -200,63 +200,48 @@ export const DashboardHome: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
       
-      {/* Live System Telemetry Strip */}
-      <div className="card-enterprise p-3.5 bg-white flex flex-wrap items-center justify-between gap-3 text-xs border-slate-200">
+      {/* System Status Strip */}
+      <div className="card-enterprise p-3 bg-white flex flex-wrap items-center justify-between gap-3 text-xs border-slate-200">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="font-bold text-slate-900">XGBoost ML Core:</span>
-            <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold border border-emerald-200">
-              Online & Ready
-            </span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="font-semibold text-slate-800">Gradient Boosted Engine:</span>
+            <span className="text-emerald-700 font-semibold">Active</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-slate-500 font-mono">
+          <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
             <span>Latency:</span>
-            <span className="font-bold text-slate-800">&lt;4.2ms</span>
+            <span className="font-semibold text-slate-700">&lt;4ms</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 text-slate-500 font-mono">
+          <div className="hidden md:flex items-center gap-1.5 text-slate-500">
             <span>Features:</span>
-            <span className="font-bold text-slate-800">30 One-Hot Encoded</span>
+            <span className="font-semibold text-slate-700">30 Engineered</span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 text-slate-500 font-mono">
-            <span>Threshold:</span>
-            <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+          <div className="hidden lg:flex items-center gap-1.5 text-slate-500">
+            <span>Decision Cutoff:</span>
+            <span className="font-semibold text-slate-800">
               τ = {metrics.optimal_threshold || 0.61}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px]">
-          <Database className="w-3.5 h-3.5 text-indigo-600" />
-          <span>7,043 Cohort Records Loaded</span>
+        <div className="text-slate-500 text-xs">
+          <span>Enterprise Portfolio Analysis</span>
         </div>
       </div>
 
       {/* Executive Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200/80">
-              Executive Telemetry
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-medium text-slate-500">
-              Telco Customer Risk & Retention Intelligence
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Customer Risk & Retention Overview
           </h1>
-
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Real-time churn risk modeling, portfolio exposure, and retention analytics calibrated on the verified 
-            <strong className="text-slate-900 font-semibold"> 7,043 Telco Customer Cohort</strong>.
+            Portfolio churn risk modeling, customer cancellation exposure, and retention distribution analysis.
           </p>
         </div>
 
@@ -265,17 +250,17 @@ export const DashboardHome: React.FC = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="btn-secondary text-xs py-2 px-3"
+            className="btn-secondary text-xs py-1.5 px-3"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
 
           <Link
             to="/dashboard/single"
-            className="btn-primary text-xs py-2 px-3.5"
+            className="btn-primary text-xs py-1.5 px-3.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+            <UserCheck className="w-3.5 h-3.5" />
             <span>Audit Account</span>
           </Link>
         </div>
