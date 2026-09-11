@@ -457,7 +457,7 @@ export const SinglePrediction: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-indigo disabled:opacity-50 shadow-sm"
+                className="btn-primary disabled:opacity-50 shadow-xs text-xs py-2 px-4"
               >
                 {loading ? (
                   <>

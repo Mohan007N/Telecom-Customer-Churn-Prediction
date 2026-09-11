@@ -270,7 +270,7 @@ export const BatchPrediction: React.FC = () => {
                 type="button"
                 onClick={handlePredict}
                 disabled={loading}
-                className="btn-indigo disabled:opacity-50 shadow-sm"
+                className="btn-primary disabled:opacity-50 shadow-xs"
               >
                 {loading ? (
                   <>
@@ -306,16 +306,16 @@ export const BatchPrediction: React.FC = () => {
               <div className="text-xs text-emerald-600 font-semibold">Retained Customers</div>
               <div className="text-2xl font-bold text-emerald-700 font-mono-nums mt-0.5">{response.retained_count.toLocaleString()}</div>
             </div>
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200 flex flex-col justify-between">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between">
               <div>
-                <div className="text-xs text-indigo-700 font-semibold">Cohort Churn Percentage</div>
-                <div className="text-2xl font-bold text-indigo-900 font-mono-nums mt-0.5">{response.churn_rate_pct}%</div>
+                <div className="text-xs text-slate-700 font-semibold">Cohort Churn Percentage</div>
+                <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-0.5">{response.churn_rate_pct}%</div>
               </div>
               {response.download_url && (
                 <a
                   href={`http://localhost:8000${response.download_url}`}
                   download
-                  className="mt-2 btn-indigo text-xs py-1.5 px-3 justify-center shadow-2xs"
+                  className="mt-2 btn-primary text-xs py-1.5 px-3 justify-center shadow-xs"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download Prediction CSV</span>
