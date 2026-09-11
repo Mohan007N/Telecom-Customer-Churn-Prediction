@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { History, Search, Filter, RefreshCw } from 'lucide-react'
-import { getPredictionHistory, PredictionRecord } from '../utils/predictionStorage'
+import React, { useState, useEffect, useMemo } from 'react'
+import {
+  History,
+  Search,
+  Filter,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  UserX,
+  UserCheck,
+  Download,
+  ShieldAlert,
+  BarChart3,
+  TrendingDown
+} from 'lucide-react'
+import { getPredictionHistory, clearPredictionHistory, PredictionRecord } from '../utils/predictionStorage'
 
 export const PredictionHistory: React.FC = () => {
   const [historyData, setHistoryData] = useState<PredictionRecord[]>([])
@@ -15,106 +28,239 @@ export const PredictionHistory: React.FC = () => {
     setHistoryData(getPredictionHistory())
   }
 
-  const filteredData = historyData.filter((item) => {
-    const matchesSearch = item.id.toLowerCase().includes(search.toLowerCase()) ||
-                          item.contract.toLowerCase().includes(search.toLowerCase())
-    if (filter === 'ALL') return matchesSearch
-    if (filter === 'CHURN') return matchesSearch && item.status === 'Churn'
-    if (filter === 'RETAINED') return matchesSearch && item.status === 'Retained'
-    if (filter === 'HIGH_RISK') return matchesSearch && item.riskLevel === 'High Risk'
-    return matchesSearch
-  })
+  const handleClear = () => {
+    if (window.confirm('Are you sure you want to clear all prediction audit records?')) {
+      clearPredictionHistory()
+      setHistoryData([])
+    }
+  }
+
+  const handleExportCSV = () => {
+    if (historyData.length === 0) return
+    const headers = ['ID', 'Timestamp', 'Contract', 'MonthlyCharges', 'Probability', 'RiskLevel', 'Status']
+    const rows = historyData.map(r => [
+      r.id,
+      r.timestamp,
+      `"${r.contract}"`,
+      r.monthlyCharges,
+      r.probability,
+      `"${r.riskLevel}"`,
+      r.status
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `churn_prediction_audits_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const filteredData = useMemo(() => {
+    return historyData.filter((item) => {
+      const matchesSearch =
+        item.id.toLowerCase().includes(search.toLowerCase()) ||
+        item.contract.toLowerCase().includes(search.toLowerCase()) ||
+        item.riskLevel.toLowerCase().includes(search.toLowerCase())
+
+      if (!matchesSearch) return false
+      if (filter === 'ALL') return true
+      if (filter === 'CHURN') return item.status === 'Churn'
+      if (filter === 'RETAINED') return item.status === 'Retained'
+      if (filter === 'HIGH_RISK') return item.riskLevel === 'High Risk'
+      return true
+    })
+  }, [historyData, search, filter])
+
+  // Summary KPIs for historical predictions
+  const totalAudits = historyData.length
+  const churnCount = historyData.filter(h => h.status === 'Churn').length
+  const highRiskCount = historyData.filter(h => h.riskLevel === 'High Risk').length
+  const avgProb = totalAudits > 0
+    ? (historyData.reduce((acc, h) => acc + (h.probabilityVal || 0), 0) / totalAudits * 100).toFixed(1)
+    : '0.0'
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Prediction History Log</h1>
-          <p className="text-sm text-gray-500 mt-1">Audit log of customer churn predictions performed on real dataset records.</p>
-        </div>
-        <button
-          onClick={handleRefresh}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-all"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh Log</span>
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6">
-        {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search Customer ID or Contract..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:bg-white focus:outline-none"
-            />
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200/80">
+              Audit Trail & Governance
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-medium text-slate-500">
+              Persistent Local Storage
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:bg-white focus:outline-none"
-            >
-              <option value="ALL">All Predictions ({historyData.length})</option>
-              <option value="CHURN">Churn Predictions Only</option>
-              <option value="RETAINED">Retained Predictions Only</option>
-              <option value="HIGH_RISK">High Risk Tier Only</option>
-            </select>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Prediction Audit Trail
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
+            Chronological audit log of single and batch customer churn predictions performed across active operational sessions.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2.5 shrink-0">
+          {historyData.length > 0 && (
+            <>
+              <button
+                onClick={handleExportCSV}
+                className="btn-secondary text-xs py-2 px-3 shadow-2xs"
+                title="Export all audit records to CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                onClick={handleClear}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all shadow-2xs cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Clear</span>
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={handleRefresh}
+            className="btn-secondary text-xs py-2 px-3 shadow-2xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Audit KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card-enterprise p-4 bg-white">
+          <div className="text-xs font-semibold text-slate-500">Total Accounts Audited</div>
+          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">{totalAudits}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Recorded across sessions</div>
+        </div>
+
+        <div className="card-enterprise p-4 bg-white border-rose-200">
+          <div className="text-xs font-semibold text-rose-700">Flagged Churn Predictions</div>
+          <div className="text-2xl font-bold text-rose-800 font-mono-nums mt-1">{churnCount}</div>
+          <div className="text-[11px] text-rose-600 font-semibold mt-1">
+            {totalAudits > 0 ? `${((churnCount / totalAudits) * 100).toFixed(1)}% of audit pool` : '0%'}
+          </div>
+        </div>
+
+        <div className="card-enterprise p-4 bg-white">
+          <div className="text-xs font-semibold text-slate-500">High Risk Tier Accounts</div>
+          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">{highRiskCount}</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Probability &ge; 60%</div>
+        </div>
+
+        <div className="card-enterprise p-4 bg-white">
+          <div className="text-xs font-semibold text-slate-500">Average Risk Probability</div>
+          <div className="text-2xl font-bold text-indigo-600 font-mono-nums mt-1">{avgProb}%</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Mean likelihood score</div>
+        </div>
+      </div>
+
+      {/* Audit Table Container */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold uppercase text-slate-400 mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3" />
+              <span>Filter:</span>
+            </span>
+
+            {[
+              { key: 'ALL', label: `All (${historyData.length})` },
+              { key: 'CHURN', label: 'Churn Only' },
+              { key: 'RETAINED', label: 'Retained Only' },
+              { key: 'HIGH_RISK', label: 'High Risk Tier' }
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                  filter === tab.key
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search Account ID or Contract..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-enterprise w-full pl-8.5 pr-3 py-1.5 text-xs font-mono"
+            />
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <div className="overflow-x-auto border border-slate-200 rounded-lg">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 font-bold text-gray-600 uppercase">
-                <th className="py-3 px-4">Customer ID</th>
+              <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-600 uppercase text-[11px]">
+                <th className="py-3 px-4">Account ID</th>
                 <th className="py-3 px-4">Timestamp</th>
                 <th className="py-3 px-4">Contract</th>
-                <th className="py-3 px-4">Monthly Charges</th>
+                <th className="py-3 px-4">Monthly Bill</th>
                 <th className="py-3 px-4">Probability</th>
                 <th className="py-3 px-4">Risk Tier</th>
                 <th className="py-3 px-4">Prediction Result</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-slate-100 bg-white">
               {filteredData.length > 0 ? (
                 filteredData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="py-3.5 px-4 font-mono font-bold text-gray-900">{row.id}</td>
-                    <td className="py-3.5 px-4 text-gray-500">{row.timestamp}</td>
-                    <td className="py-3.5 px-4 text-gray-700">{row.contract}</td>
-                    <td className="py-3.5 px-4 text-gray-900 font-semibold">{row.monthlyCharges}</td>
-                    <td className="py-3.5 px-4 font-bold text-gray-900">{row.probability}</td>
+                  <tr key={idx} className="table-row-hover">
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{row.id}</td>
+                    <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">{row.timestamp}</td>
+                    <td className="py-3.5 px-4 text-slate-700 font-medium">{row.contract}</td>
+                    <td className="py-3.5 px-4 text-slate-900 font-semibold font-mono">{row.monthlyCharges}</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">{row.probability}</td>
                     <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold ${
-                        row.riskLevel === 'High Risk' ? 'bg-red-100 text-red-700' :
-                        row.riskLevel === 'Medium Risk' ? 'bg-amber-100 text-amber-700' :
-                        'bg-emerald-100 text-emerald-700'
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono ${
+                        row.riskLevel === 'High Risk' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
+                        row.riskLevel === 'Medium Risk' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                        'bg-emerald-100 text-emerald-700 border border-emerald-200'
                       }`}>
                         {row.riskLevel}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-bold">
                       {row.status === 'Churn' ? (
-                        <span className="text-red-600">Churned (1)</span>
+                        <span className="inline-flex items-center gap-1 text-rose-600 font-bold">
+                          <UserX className="w-3.5 h-3.5" />
+                          Churn (1)
+                        </span>
                       ) : (
-                        <span className="text-emerald-600">Retained (0)</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Retained (0)
+                        </span>
                       )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-400">
-                    No prediction records matching search filter.
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-medium text-slate-500">No prediction records matching search or filter.</p>
                   </td>
                 </tr>
               )}
@@ -125,3 +271,5 @@ export const PredictionHistory: React.FC = () => {
     </div>
   )
 }
+
+

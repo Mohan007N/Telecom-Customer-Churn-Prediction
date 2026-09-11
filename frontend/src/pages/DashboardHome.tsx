@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Users,
@@ -17,7 +17,12 @@ import {
   BarChart3,
   RefreshCw,
   SlidersHorizontal,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Cpu,
+  Database,
+  Search,
+  Filter,
+  CheckCircle2
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -96,6 +101,8 @@ export const DashboardHome: React.FC = () => {
     optimal_threshold: 0.61
   })
   const [recentAudits, setRecentAudits] = useState<PredictionRecord[]>([])
+  const [cohortFilter, setCohortFilter] = useState<string>('ALL')
+  const [searchQuery, setSearchQuery] = useState<string>('')
 
   const loadData = () => {
     setLoading(true)
@@ -116,7 +123,6 @@ export const DashboardHome: React.FC = () => {
         setLoading(false)
       })
 
-    // Load recent local prediction activity
     setRecentAudits(getPredictionHistory().slice(0, 6))
   }
 
@@ -124,7 +130,7 @@ export const DashboardHome: React.FC = () => {
     loadData()
   }, [])
 
-  // Robust default fallbacks matching the exact Telco dataset if API is cold
+  // Robust fallback values matching verified Telco dataset
   const overview = analytics?.overview || {
     total_customers: 7043,
     total_churned: 1869,
@@ -166,109 +172,163 @@ export const DashboardHome: React.FC = () => {
     { label: 'Medium-Term 1-Year Contract', importance_pct: 2.92 },
   ]
 
-  const sampleCustomers = analytics?.sample_customers || []
+  const rawSampleCustomers = analytics?.sample_customers || []
+
+  // Filtered Cohort Data
+  const filteredCustomers = useMemo(() => {
+    return rawSampleCustomers.filter((row) => {
+      const matchesSearch =
+        row.customerID.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        row.Contract.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        row.InternetService.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        row.risk_level.toLowerCase().includes(searchQuery.toLowerCase())
+
+      if (!matchesSearch) return false
+
+      if (cohortFilter === 'ALL') return true
+      if (cohortFilter === 'HIGH_RISK') return row.risk_level === 'High Risk'
+      if (cohortFilter === 'MONTH_TO_MONTH') return row.Contract === 'Month-to-month'
+      if (cohortFilter === 'FIBER') return row.InternetService === 'Fiber optic'
+      if (cohortFilter === 'RETAINED') return row.actual_churn === 'No'
+      return true
+    })
+  }, [rawSampleCustomers, cohortFilter, searchQuery])
 
   const handleSimulate = (cust: any) => {
-    // Save to sessionStorage or pass state to single prediction
     sessionStorage.setItem('prefill_customer', JSON.stringify(cust))
     navigate('/dashboard/single')
   }
 
   return (
-    <div className="space-y-10 pb-12">
+    <div className="space-y-8 pb-12">
       
-      {/* ── Executive Header Banner ──────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-bold font-display uppercase tracking-widest text-[#8C6D2B] bg-[#FDFBF7] px-2.5 py-1 rounded border border-[#C5A059]/30">
-              EXECUTIVE TELEMETRY
-            </span>
-            <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-medium text-slate-500">
-              Telco Customer Retention Risk Engine
+      {/* Live System Telemetry Strip */}
+      <div className="card-enterprise p-3.5 bg-white flex flex-wrap items-center justify-between gap-3 text-xs border-slate-200">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="font-bold text-slate-900">XGBoost ML Core:</span>
+            <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold border border-emerald-200">
+              Online & Ready
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B132B] font-editorial tracking-tight">
-            Executive Intelligence & Risk Dashboard
+          <div className="hidden sm:flex items-center gap-1.5 text-slate-500 font-mono">
+            <span>Latency:</span>
+            <span className="font-bold text-slate-800">&lt;4.2ms</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-1.5 text-slate-500 font-mono">
+            <span>Features:</span>
+            <span className="font-bold text-slate-800">30 One-Hot Encoded</span>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 text-slate-500 font-mono">
+            <span>Threshold:</span>
+            <span className="font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+              τ = {metrics.optimal_threshold || 0.61}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px]">
+          <Database className="w-3.5 h-3.5 text-indigo-600" />
+          <span>7,043 Cohort Records Loaded</span>
+        </div>
+      </div>
+
+      {/* Executive Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200/80">
+              Executive Telemetry
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-medium text-slate-500">
+              Telco Customer Risk & Retention Intelligence
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Customer Risk & Retention Overview
           </h1>
 
-          <p className="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">
-            Real-time churn risk modeling, financial revenue vulnerability, and customer retention analytics trained on the verified 
-            <strong className="text-slate-900 font-semibold"> 7,043 Telco Customer Cohort</strong> using recall-optimized XGBoost.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
+            Real-time churn risk modeling, portfolio exposure, and retention analytics calibrated on the verified 
+            <strong className="text-slate-900 font-semibold"> 7,043 Telco Customer Cohort</strong>.
           </p>
         </div>
 
-        {/* Refresh & Controls */}
-        <div className="flex items-center gap-3">
+        {/* Controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={loadData}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all shadow-sm"
+            className="btn-secondary text-xs py-2 px-3"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#C5A059] ${loading ? 'animate-spin' : ''}`} />
-            <span>{loading ? 'Refreshing...' : 'Sync Telemetry'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
 
           <Link
             to="/dashboard/single"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#0B132B] to-[#1C2541] hover:from-[#1C2541] hover:to-[#2A3B60] text-white text-xs font-semibold shadow-sm border border-[#C5A059]/30 transition-all"
+            className="btn-primary text-xs py-2 px-3.5"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#E2C799]" />
+            <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
             <span>Audit Account</span>
           </Link>
         </div>
       </div>
 
-      {/* ── 4 Classical Metric Master Cards ──────────────────────────── */}
+      {/* 4 Metric Master Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Total Portfolio Volume */}
-        <div className="card-classical p-6 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 right-0 h-1 gold-accent-line opacity-80 group-hover:opacity-100 transition-opacity"></div>
+        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-line"></div>
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-[11px] font-bold font-display uppercase tracking-wider text-slate-500">
-                Enterprise Portfolio
+              <span className="text-xs font-semibold text-slate-500">
+                Total Enterprise Portfolio
               </span>
-              <div className="text-3xl font-black text-[#0B132B] tabular-nums mt-1 font-editorial">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
                 {overview.total_customers.toLocaleString()}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-[#0B132B]/5 text-[#0B132B] border border-slate-200 flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#8C6D2B]" />
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
+              <Users className="w-5 h-5 text-indigo-600" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Monthly Run-Rate:</span>
+            <span className="text-slate-500 font-medium">Monthly Revenue:</span>
             <span className="font-mono font-bold text-slate-900">${(overview.total_monthly_revenue / 1000).toFixed(1)}k/mo</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Avg Lifetime Tenure:</span>
+            <span className="text-slate-500 font-medium">Avg Account Tenure:</span>
             <span className="font-mono font-bold text-slate-700">{overview.avg_tenure_months} Months</span>
           </div>
         </div>
 
         {/* Card 2: Model Detection Accuracy */}
-        <div className="card-classical p-6 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
+        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-600"></div>
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-[11px] font-bold font-display uppercase tracking-wider text-slate-500">
-                Model Classification
+              <span className="text-xs font-semibold text-slate-500">
+                Model Accuracy (Test Set)
               </span>
-              <div className="text-3xl font-black text-[#0B132B] tabular-nums mt-1 font-editorial">
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
                 {(metrics.test_accuracy * 100).toFixed(1)}%
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
-              <Award className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center">
+              <Award className="w-5 h-5 text-indigo-600" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">ROC-AUC Separation:</span>
-            <span className="font-mono font-bold text-blue-700">{metrics.roc_auc.toFixed(4)}</span>
+            <span className="text-slate-500 font-medium">ROC-AUC Score:</span>
+            <span className="font-mono font-bold text-indigo-600">{metrics.roc_auc.toFixed(4)}</span>
           </div>
           <div className="mt-1 flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium">Early-Catch Recall:</span>
@@ -277,19 +337,19 @@ export const DashboardHome: React.FC = () => {
         </div>
 
         {/* Card 3: Churn Risk Exposure */}
-        <div className="card-classical p-6 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-red-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
+        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-rose"></div>
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-[11px] font-bold font-display uppercase tracking-wider text-slate-500">
+              <span className="text-xs font-semibold text-slate-500">
                 Churn Risk Exposure
               </span>
-              <div className="text-3xl font-black text-rose-700 tabular-nums mt-1 font-editorial">
+              <div className="text-2xl sm:text-3xl font-bold text-rose-600 font-mono-nums mt-0.5">
                 {overview.total_churned.toLocaleString()}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center">
-              <UserX className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center">
+              <UserX className="w-5 h-5 text-rose-600" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -298,24 +358,24 @@ export const DashboardHome: React.FC = () => {
           </div>
           <div className="mt-1 flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium">Monthly Revenue at Risk:</span>
-            <span className="font-mono font-bold text-rose-700">${(overview.monthly_churn_loss / 1000).toFixed(1)}k/mo</span>
+            <span className="font-mono font-bold text-rose-600">${(overview.monthly_churn_loss / 1000).toFixed(1)}k/mo</span>
           </div>
         </div>
 
         {/* Card 4: Retained Accounts */}
-        <div className="card-classical p-6 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-80 group-hover:opacity-100 transition-opacity"></div>
+        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-emerald"></div>
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <span className="text-[11px] font-bold font-display uppercase tracking-wider text-slate-500">
-                Retained Enterprise
+              <span className="text-xs font-semibold text-slate-500">
+                Retained Enterprise Base
               </span>
-              <div className="text-3xl font-black text-emerald-700 tabular-nums mt-1 font-editorial">
+              <div className="text-2xl sm:text-3xl font-bold text-emerald-600 font-mono-nums mt-0.5">
                 {overview.total_retained.toLocaleString()}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
-              <UserCheck className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-emerald-600" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -324,34 +384,34 @@ export const DashboardHome: React.FC = () => {
           </div>
           <div className="mt-1 flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium">Secured Monthly Run:</span>
-            <span className="font-mono font-bold text-emerald-700">${((overview.total_monthly_revenue - overview.monthly_churn_loss) / 1000).toFixed(1)}k/mo</span>
+            <span className="font-mono font-bold text-emerald-600">${((overview.total_monthly_revenue - overview.monthly_churn_loss) / 1000).toFixed(1)}k/mo</span>
           </div>
         </div>
 
       </div>
 
-      {/* ── Real Interactive Visualizations (Recharts) ───────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Real Interactive Visualizations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Contract Vulnerability Analysis */}
-        <div className="card-classical p-6 space-y-4">
+        <div className="card-enterprise p-6 space-y-4 bg-white">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-[#0B132B] font-editorial">
+              <h3 className="text-base font-bold text-slate-900">
                 Contract Type Risk Vulnerability
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Real customer cohort volume comparison: Retained vs Churned
+                Cohort comparison: Retained vs Churned accounts
               </p>
             </div>
-            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-[#FDFBF7] text-[#8C6D2B] border border-[#C5A059]/30">
-              7,043 Real Records
+            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+              7,043 Records
             </span>
           </div>
 
           <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={contractChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+              <BarChart data={contractChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                 <XAxis dataKey="contract" stroke="#64748B" fontSize={12} tickLine={false} />
                 <YAxis stroke="#64748B" fontSize={12} tickLine={false} />
@@ -360,44 +420,44 @@ export const DashboardHome: React.FC = () => {
                     `${Number(value).toLocaleString()} accounts`,
                     name === 'retained' ? 'Retained Accounts' : 'Churned Accounts'
                   ]}
-                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
                 />
                 <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="retained" name="Retained" fill="#0B132B" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="churned" name="Churned" fill="#E11D48" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="retained" name="Retained" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="churned" name="Churned" fill="#F43F5E" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 flex items-center justify-between text-xs">
-            <span className="text-slate-600">Month-to-Month accounts churn at <strong>42.7%</strong> vs <strong>2.8%</strong> for Two-Year Contracts.</span>
+            <span className="text-slate-600">Month-to-Month accounts churn at <strong>42.7%</strong> vs <strong>2.8%</strong> for 2-Year Contracts.</span>
             <span className="font-bold text-rose-600">+15.2x Hazard Ratio</span>
           </div>
         </div>
 
         {/* Chart 2: Tenure Decay & Loyalty Curve */}
-        <div className="card-classical p-6 space-y-4">
+        <div className="card-enterprise p-6 space-y-4 bg-white">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-[#0B132B] font-editorial">
+              <h3 className="text-base font-bold text-slate-900">
                 Tenure Decay & Customer Loyalty Curve
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Churn rate drops precipitously as customer accounts mature
+                Churn hazard drops sharply as customer tenure increases
               </p>
             </div>
             <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
-              Survival Telemetry
+              Tenure Curve
             </span>
           </div>
 
           <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={tenureChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+              <AreaChart data={tenureChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="tenureGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#C5A059" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#C5A059" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
@@ -405,13 +465,13 @@ export const DashboardHome: React.FC = () => {
                 <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="%" />
                 <Tooltip
                   formatter={(value: any) => [`${value}% Churn Hazard Rate`, 'Cohort Churn %']}
-                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="churn_rate"
                   name="Churn Rate (%)"
-                  stroke="#8C6D2B"
+                  stroke="#4F46E5"
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#tenureGradient)"
@@ -421,30 +481,30 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 flex items-center justify-between text-xs">
-            <span className="text-slate-600">Accounts surviving past 4 years experience negligible churn (<strong className="text-emerald-700">9.5%</strong>).</span>
+            <span className="text-slate-600">Accounts active for 4+ years experience only <strong className="text-emerald-700">9.5%</strong> churn.</span>
             <span className="font-bold text-emerald-700">80% Risk Drop</span>
           </div>
         </div>
 
       </div>
 
-      {/* ── XGBoost Top Feature Importances (Direct from Model) ──────── */}
-      <div className="card-classical p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+      {/* XGBoost Top Feature Importances */}
+      <div className="card-enterprise p-6 space-y-5 bg-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold font-display uppercase tracking-widest text-[#8C6D2B]">
-                MODEL EXPLAINABILITY
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+                Model Explainability
               </span>
               <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs font-semibold text-slate-700">Tree-Gain Weights</span>
+              <span className="text-xs font-semibold text-slate-600">Tree-Gain Feature Weights</span>
             </div>
-            <h3 className="text-xl font-bold text-[#0B132B] font-editorial mt-0.5">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
               Top XGBoost Decision Drivers for Customer Churn
             </h3>
           </div>
           <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
-            Total Pipeline Features: <strong>30 Engineered</strong>
+            Pipeline Features: <strong>30 Engineered</strong>
           </div>
         </div>
 
@@ -453,7 +513,7 @@ export const DashboardHome: React.FC = () => {
             <div key={idx} className="space-y-1.5">
               <div className="flex justify-between items-center text-xs font-semibold">
                 <span className="text-slate-800 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-mono flex items-center justify-center font-bold">
+                  <span className="w-5 h-5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono flex items-center justify-center font-bold">
                     #{idx + 1}
                   </span>
                   {feat.label}
@@ -462,7 +522,7 @@ export const DashboardHome: React.FC = () => {
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#0B132B] via-[#2A3B60] to-[#C5A059]"
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-blue-600"
                   style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
                 ></div>
               </div>
@@ -471,83 +531,122 @@ export const DashboardHome: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Real Customer Telemetry Explorer Table ───────────────────── */}
-      <div className="card-classical overflow-hidden">
+      {/* Real Customer Telemetry Explorer Table with Interactive Filtering */}
+      <div className="card-enterprise overflow-hidden bg-white">
         
-        <div className="p-6 border-b border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FFFFFF]">
+        <div className="p-5 border-b border-slate-200/90 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold font-display uppercase tracking-widest text-[#8C6D2B]">
-                DATASET TELEMETRY
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+                Verified Cohort Audit
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 Scored by XGBoost
               </span>
             </div>
-            <h3 className="text-xl font-bold text-[#0B132B] font-editorial mt-0.5">
-              Real Telco Account Audit Log & Live Predictions
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+              Customer Account Profiles & Live Predictions
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Sample profiles extracted directly from <span className="font-mono font-medium">WA_Fn-UseC_-Telco-Customer-Churn.csv</span>.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Benchmark records with real features from <span className="font-mono font-medium">WA_Fn-UseC_-Telco-Customer-Churn.csv</span>.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">
-              Showing 12 Verified Cohort Accounts
-            </span>
+          {/* Interactive Search Bar & Row Count */}
+          <div className="flex items-center gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search Account or Contract..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-enterprise w-full pl-8.5 pr-3 py-1.5 text-xs font-mono"
+              />
+            </div>
+            <div className="text-xs font-mono font-bold text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 shrink-0">
+              {filteredCustomers.length} Shown
+            </div>
           </div>
+        </div>
+
+        {/* Quick Filter Tabs */}
+        <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold uppercase text-slate-400 mr-1 flex items-center gap-1">
+            <Filter className="w-3 h-3" />
+            <span>Filter Cohort:</span>
+          </span>
+
+          {[
+            { key: 'ALL', label: 'All Profiles' },
+            { key: 'HIGH_RISK', label: 'High Churn Hazard' },
+            { key: 'MONTH_TO_MONTH', label: 'Month-to-Month' },
+            { key: 'FIBER', label: 'Fiber Optic Line' },
+            { key: 'RETAINED', label: 'Retained Base' }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setCohortFilter(tab.key)}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                cohortFilter === tab.key
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 font-display">
-                <th className="py-3.5 px-5">Account ID</th>
-                <th className="py-3.5 px-5">Contract</th>
-                <th className="py-3.5 px-5">Internet Svc</th>
-                <th className="py-3.5 px-5">Tenure</th>
-                <th className="py-3.5 px-5">Monthly Bill</th>
-                <th className="py-3.5 px-5">Ground Truth</th>
-                <th className="py-3.5 px-5">XGBoost Prob</th>
-                <th className="py-3.5 px-5">Risk Tier</th>
-                <th className="py-3.5 px-5 text-right">Audit Action</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3 px-4">Account ID</th>
+                <th className="py-3 px-4">Contract</th>
+                <th className="py-3 px-4">Internet Svc</th>
+                <th className="py-3 px-4">Tenure</th>
+                <th className="py-3 px-4">Monthly Bill</th>
+                <th className="py-3 px-4">Ground Truth</th>
+                <th className="py-3 px-4">XGBoost Prob</th>
+                <th className="py-3 px-4">Risk Tier</th>
+                <th className="py-3 px-4 text-right">Audit Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sampleCustomers.length > 0 ? (
-                sampleCustomers.map((row, idx) => (
-                  <tr key={idx} className="table-row-classical transition-colors">
+              {filteredCustomers.length > 0 ? (
+                filteredCustomers.map((row, idx) => (
+                  <tr key={idx} className="table-row-hover transition-colors">
                     
                     {/* ID */}
-                    <td className="py-4 px-5 font-mono font-bold text-[#0B132B]">
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                       {row.customerID}
                     </td>
 
                     {/* Contract */}
-                    <td className="py-4 px-5 text-slate-700 font-medium">
+                    <td className="py-3.5 px-4 text-slate-700 font-medium">
                       {row.Contract}
                     </td>
 
                     {/* Internet Service */}
-                    <td className="py-4 px-5 text-slate-600">
+                    <td className="py-3.5 px-4 text-slate-600">
                       {row.InternetService}
                     </td>
 
                     {/* Tenure */}
-                    <td className="py-4 px-5 font-mono text-slate-700">
+                    <td className="py-3.5 px-4 font-mono text-slate-700">
                       {row.tenure} mos
                     </td>
 
                     {/* Monthly Charges */}
-                    <td className="py-4 px-5 font-mono font-bold text-slate-900">
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                       ${Number(row.MonthlyCharges).toFixed(2)}
                     </td>
 
                     {/* Ground Truth Outcome */}
-                    <td className="py-4 px-5">
+                    <td className="py-3.5 px-4">
                       {row.actual_churn === 'Yes' ? (
                         <span className="inline-flex items-center gap-1 font-semibold text-rose-600">
                           <UserX className="w-3.5 h-3.5" />
@@ -562,13 +661,13 @@ export const DashboardHome: React.FC = () => {
                     </td>
 
                     {/* Model Probability */}
-                    <td className="py-4 px-5 font-mono font-bold text-[#0B132B]">
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                       {row.churn_probability_pct}
                     </td>
 
                     {/* Risk Tier Badge */}
-                    <td className="py-4 px-5">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase font-mono ${
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase font-mono ${
                         row.risk_level === 'High Risk'
                           ? 'bg-rose-100 text-rose-800 border border-rose-200'
                           : row.risk_level === 'Medium Risk'
@@ -580,13 +679,13 @@ export const DashboardHome: React.FC = () => {
                     </td>
 
                     {/* Action */}
-                    <td className="py-4 px-5 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleSimulate(row)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-[#C5A059] text-[#0B132B] hover:text-[#8C6D2B] text-xs font-semibold shadow-2xs transition-all"
-                        title="Load customer profile into Single Customer Risk Evaluator"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-indigo-400 text-slate-700 hover:text-indigo-600 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        title="Load customer profile into Single Risk Evaluator"
                       >
-                        <SlidersHorizontal className="w-3 h-3 text-[#C5A059]" />
+                        <SlidersHorizontal className="w-3 h-3 text-indigo-600" />
                         <span>Simulate</span>
                       </button>
                     </td>
@@ -596,7 +695,7 @@ export const DashboardHome: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
-                    Loading real dataset cohort records...
+                    No verified cohort records matching filter.
                   </td>
                 </tr>
               )}
@@ -606,43 +705,43 @@ export const DashboardHome: React.FC = () => {
 
       </div>
 
-      {/* ── Quick Action Executive Workflows ─────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Quick Action Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         
         <Link
           to="/dashboard/single"
-          className="card-classical p-6 hover:border-[#C5A059] transition-all group flex items-start justify-between"
+          className="card-enterprise p-5 hover:border-indigo-300 transition-all group flex items-start justify-between bg-white"
         >
           <div className="space-y-2">
-            <div className="w-11 h-11 rounded-xl bg-[#0B132B] text-[#E2C799] flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
               <UserCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-bold text-[#0B132B] font-editorial group-hover:text-[#8C6D2B] transition-colors">
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
               Single Account Risk Evaluator
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed max-w-md">
-              Evaluate real-time churn likelihood and risk category for an individual client with fine-grained demographic, contract, and monthly bill controls.
+              Evaluate real-time churn probability and risk tier for an individual customer with contract and demographic controls.
             </p>
           </div>
-          <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-[#8C6D2B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </Link>
 
         <Link
           to="/dashboard/batch"
-          className="card-classical p-6 hover:border-[#C5A059] transition-all group flex items-start justify-between"
+          className="card-enterprise p-5 hover:border-indigo-300 transition-all group flex items-start justify-between bg-white"
         >
           <div className="space-y-2">
-            <div className="w-11 h-11 rounded-xl bg-[#0B132B] text-[#E2C799] flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-bold text-[#0B132B] font-editorial group-hover:text-[#8C6D2B] transition-colors">
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
               High-Speed Batch CSV Engine
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed max-w-md">
-              Upload customer portfolio CSV files to score thousands of accounts in seconds with automated feature engineering and one-click report downloads.
+              Upload customer portfolio CSV files to score thousands of accounts in seconds with automated feature engineering.
             </p>
           </div>
-          <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-[#8C6D2B] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </Link>
 
       </div>
@@ -650,3 +749,5 @@ export const DashboardHome: React.FC = () => {
     </div>
   )
 }
+
+

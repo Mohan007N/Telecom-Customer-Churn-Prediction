@@ -4,16 +4,21 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-    --gold: 42 53% 56%;
-    --gold-dark: 38 52% 41%;
-    --gold-light: 44 65% 72%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
   }
 
@@ -22,15 +27,16 @@
   }
 
   body {
-    background-color: #F8F9FB;
+    background-color: #F8FAFC;
     color: #0F172A;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, .font-serif-title {
-    font-family: 'Playfair Display', Georgia, serif;
-    letter-spacing: -0.015em;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -50,53 +56,193 @@
   background: #94A3B8;
 }
 
-/* Classical Styling Utilities */
-.font-display {
-  font-family: 'Cinzel', Georgia, serif;
-  letter-spacing: 0.05em;
-}
-
-.font-editorial {
-  font-family: 'Playfair Display', Georgia, serif;
-}
-
-.tabular-nums {
+/* Classic Enterprise Typography */
+.font-mono-nums {
   font-variant-numeric: tabular-nums;
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Classical Luxury Card */
-.card-classical {
+/* Enterprise White Card Style */
+.card-enterprise {
   background-color: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid #E2E8F0;
   border-radius: 0.875rem;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.card-classical:hover {
-  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
-  border-color: rgba(197, 160, 89, 0.4);
+.card-enterprise:hover {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+  border-color: #CBD5E1;
 }
 
-/* Gold Accent Line / Ribbon */
-.gold-accent-line {
-  background: linear-gradient(90deg, #C5A059 0%, #DFBA73 50%, #C5A059 100%);
+/* Luxury Classic Executive Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  border: 1px solid #334155;
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0.5px rgba(255, 255, 255, 0.15);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
-.gold-gradient-text {
-  background: linear-gradient(135deg, #0F172A 30%, #C5A059 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.btn-primary:hover {
+  background: linear-gradient(180deg, #334155 0%, #1E293B 100%);
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.15), inset 0 1px 0.5px rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
-.gold-badge {
-  background-color: #FDFBF7;
-  border: 1px solid rgba(197, 160, 89, 0.3);
-  color: #8C6D2B;
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-/* Elegant Table Row Hover */
-.table-row-classical:hover {
-  background-color: #FAFBFD;
+.btn-indigo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(180deg, #4F46E5 0%, #4338CA 100%);
+  border: 1px solid #3730A3;
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 3px 0 rgba(79, 70, 229, 0.3), inset 0 1px 0.5px rgba(255, 255, 255, 0.2);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
+
+.btn-indigo:hover {
+  background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%);
+  box-shadow: 0 6px 16px -2px rgba(79, 70, 229, 0.35), inset 0 1px 0.5px rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-indigo:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1E293B;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+  box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Subtle Accent Lines */
+.card-accent-line {
+  background: linear-gradient(90deg, #3B82F6 0%, #6366F1 50%, #8B5CF6 100%);
+}
+
+.card-accent-gold {
+  background: linear-gradient(90deg, #D97706 0%, #F59E0B 50%, #B45309 100%);
+}
+
+.card-accent-emerald {
+  background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+}
+
+.card-accent-rose {
+  background: linear-gradient(90deg, #F43F5E 0%, #E11D48 100%);
+}
+
+/* Clean Table Styles */
+.table-row-hover:hover {
+  background-color: #F8FAFC;
+}
+
+/* Input Focus Ring Styling */
+.input-enterprise {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.input-enterprise:focus {
+  background-color: #FFFFFF;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  outline: none;
+}
+
+/* Badge System */
+.badge-enterprise {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.2rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  border-width: 1px;
+}
+
+.badge-emerald {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+
+.badge-rose {
+  background-color: #FFF1F2;
+  color: #9F1239;
+  border-color: #FECDD3;
+}
+
+.badge-amber {
+  background-color: #FFFBEB;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+
+.badge-indigo {
+  background-color: #EEF2FF;
+  color: #3730A3;
+  border-color: #C7D2FE;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+
