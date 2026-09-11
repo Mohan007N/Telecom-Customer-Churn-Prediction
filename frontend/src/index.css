@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,11 +21,11 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --radius: 0.625rem;
   }
 
   * {
-    @apply border-slate-200/80;
+    @apply border-slate-200/90;
   }
 
   body {
@@ -32,11 +34,13 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
@@ -56,76 +60,56 @@
   background: #94A3B8;
 }
 
-/* Classic Enterprise Typography */
+/* Professional Tabular Mono */
 .font-mono-nums {
   font-variant-numeric: tabular-nums;
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Enterprise White Card Style */
+/* Enterprise Card Style */
 .card-enterprise {
   background-color: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .card-enterprise:hover {
   border-color: #CBD5E1;
-  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.06), 0 4px 10px -3px rgba(15, 23, 42, 0.03);
+  transform: translateY(-2px);
 }
 
-/* Classic Enterprise Buttons */
+/* High-Grade Corporate Action Buttons */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
+  padding: 0.6rem 1.25rem;
   font-size: 0.8125rem;
   font-weight: 600;
   color: #FFFFFF;
-  background-color: #0F172A;
-  border: 1px solid #0F172A;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.15s ease;
+  background: linear-gradient(135deg, #4338CA 0%, #2563EB 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.625rem;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  letter-spacing: -0.005em;
 }
 
 .btn-primary:hover {
-  background-color: #1E293B;
-  border-color: #1E293B;
+  background: linear-gradient(135deg, #3730A3 0%, #1D4ED8 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-primary:active {
-  background-color: #0F172A;
-}
-
-.btn-indigo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #FFFFFF;
-  background-color: #4F46E5;
-  border: 1px solid #4338CA;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(79, 70, 229, 0.2);
-  transition: all 0.15s ease;
-  cursor: pointer;
-}
-
-.btn-indigo:hover {
-  background-color: #4338CA;
-}
-
-.btn-indigo:active {
-  background-color: #3730A3;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
 }
 
 .btn-secondary {
@@ -133,43 +117,84 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
+  padding: 0.6rem 1.2rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #334155;
+  color: #1E293B;
   background-color: #FFFFFF;
   border: 1px solid #E2E8F0;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
-  transition: all 0.15s ease;
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .btn-secondary:hover {
   background-color: #F8FAFC;
   border-color: #CBD5E1;
-  color: #0F172A;
+  color: #2563EB;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.05);
 }
 
 .btn-secondary:active {
   background-color: #F1F5F9;
+  transform: translateY(0);
+}
+
+.btn-indigo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.625rem;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-indigo:hover {
+  background: linear-gradient(135deg, #4338CA 0%, #3730A3 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
 }
 
 /* Subtle Accent Lines */
 .card-accent-line {
-  background: #3B82F6;
+  background: linear-gradient(90deg, #2563EB, #4F46E5);
 }
 
 .card-accent-gold {
-  background: #F59E0B;
+  background: linear-gradient(90deg, #D97706, #F59E0B);
 }
 
 .card-accent-emerald {
-  background: #10B981;
+  background: linear-gradient(90deg, #059669, #10B981);
 }
 
 .card-accent-rose {
-  background: #F43F5E;
+  background: linear-gradient(90deg, #E11D48, #F43F5E);
+}
+
+.card-accent-purple {
+  background: linear-gradient(90deg, #7C3AED, #8B5CF6);
+}
+
+.card-accent-cyan {
+  background: linear-gradient(90deg, #0891B2, #06B6D4);
+}
+
+/* Refined Gradient Text */
+.gradient-text-indigo {
+  background: linear-gradient(135deg, #1E1B4B 0%, #3730A3 50%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Clean Table Styles */
@@ -181,16 +206,14 @@
 .input-enterprise {
   background-color: #FFFFFF;
   border: 1px solid #CBD5E1;
-  border-radius: 0.375rem;
-  transition: all 0.15s ease-in-out;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  color: #0F172A;
 }
 
 .input-enterprise:focus {
   background-color: #FFFFFF;
-  border-color: #4F46E5;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   outline: none;
 }
-
-
-

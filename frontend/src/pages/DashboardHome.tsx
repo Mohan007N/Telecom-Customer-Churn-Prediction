@@ -23,7 +23,8 @@ import {
   Search,
   Filter,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -186,28 +187,31 @@ export const DashboardHome: React.FC = () => {
   const totalFeaturesCount = modelInfo?.num_features || featureChartData.length || '--'
 
   return (
-    <div className="space-y-6 pb-12 font-sans selection:bg-slate-200 selection:text-slate-900">
+    <div className="space-y-6 pb-12 font-sans selection:bg-indigo-500/20 selection:text-indigo-950">
       
-      {/* ── 1. Top System Status Strip ───────────────────────────────── */}
-      <div className="card-enterprise p-3 bg-white flex flex-wrap items-center justify-between gap-3 text-xs border-slate-200">
+      {/* ── 1. Top System Status Strip with vibrant accents ───────────── */}
+      <div className="card-enterprise p-3 bg-white/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 text-xs border-indigo-100/80 shadow-xs">
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="font-semibold text-slate-900">Gradient Boosted Telemetry</span>
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="font-bold text-slate-900">Gradient Boosted Telemetry</span>
             <span className="text-slate-300">•</span>
-            <span className="text-slate-600 font-mono">
+            <span className="text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/80 font-mono font-semibold">
               Active Cutoff τ = {optimalThresholdVal}
             </span>
           </div>
 
           <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
             <span>Model:</span>
-            <span className="font-semibold text-slate-900 font-mono">{modelInfo?.model_name || 'XGBoost'}</span>
+            <span className="font-semibold text-indigo-900 bg-slate-100 px-2 py-0.5 rounded font-mono">{modelInfo?.model_name || 'XGBoost'}</span>
           </div>
 
           <div className="hidden md:flex items-center gap-1.5 text-slate-500">
             <span>Features:</span>
-            <span className="font-semibold text-slate-900 font-mono">{totalFeaturesCount} Encodings</span>
+            <span className="font-semibold text-blue-900 bg-blue-50 px-2 py-0.5 rounded font-mono border border-blue-100">{totalFeaturesCount} Encodings</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 text-slate-500">
@@ -222,19 +226,25 @@ export const DashboardHome: React.FC = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="btn-secondary text-xs py-1 px-2.5 cursor-pointer"
+            className="btn-secondary text-xs py-1 px-3 cursor-pointer hover:border-indigo-300 hover:text-indigo-600"
             title="Reload telemetry data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${loading ? 'animate-spin' : ''}`} />
             <span>{loading ? 'Updating...' : 'Sync'}</span>
           </button>
         </div>
       </div>
 
       {/* ── 2. Executive Header Banner ───────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200/80">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs">
+              Live Executive Hub
+            </span>
+            <span className="text-xs text-slate-500 font-medium">Real-Time Risk Scoring</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Customer Risk & Retention Overview
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
@@ -254,37 +264,37 @@ export const DashboardHome: React.FC = () => {
 
           <Link
             to="/dashboard/batch"
-            className="btn-secondary"
+            className="btn-secondary hover:border-indigo-200 hover:bg-indigo-50/50"
           >
-            <FileSpreadsheet className="w-4 h-4 text-slate-500" />
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
             <span>Batch CSV Engine</span>
           </Link>
         </div>
       </div>
 
-      {/* ── 3. Four Key KPI Master Cards ─────────────────────────────── */}
+      {/* ── 3. Four Key KPI Master Cards with Rich Color Accents ───────── */}
       {overview ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           
           {/* Card 1: Total Portfolio Volume */}
-          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-[#0F172A]"></div>
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group hover:border-blue-300">
+            <div className="absolute top-0 left-0 right-0 h-1.5 card-accent-line"></div>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-500">
                   Total Enterprise Portfolio
                 </span>
-                <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
+                <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono-nums mt-0.5">
                   {overview.total_customers.toLocaleString()}
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
-                <Users className="w-5 h-5 text-slate-800" />
+              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <Users className="w-5 h-5 text-blue-600" />
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">Monthly Run-Rate:</span>
-              <span className="font-mono font-bold text-slate-900">${(overview.total_monthly_revenue / 1000).toFixed(1)}k/mo</span>
+              <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">${(overview.total_monthly_revenue / 1000).toFixed(1)}k/mo</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">Avg Account Tenure:</span>
@@ -293,24 +303,24 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           {/* Card 2: Model Performance & Accuracy */}
-          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600"></div>
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group hover:border-purple-300">
+            <div className="absolute top-0 left-0 right-0 h-1.5 card-accent-purple"></div>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-500">
                   Model Detection Accuracy
                 </span>
-                <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
+                <div className="text-2xl sm:text-3xl font-extrabold text-indigo-600 font-mono-nums mt-0.5">
                   {metrics?.test_accuracy !== undefined ? `${(metrics.test_accuracy * 100).toFixed(1)}%` : '--'}
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center">
-                <Award className="w-5 h-5 text-indigo-700" />
+              <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <Award className="w-5 h-5 text-purple-600" />
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">ROC-AUC Score:</span>
-              <span className="font-mono font-bold text-indigo-600">
+              <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">
                 {metrics?.roc_auc !== undefined ? metrics.roc_auc.toFixed(4) : '--'}
               </span>
             </div>
@@ -323,24 +333,24 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           {/* Card 3: Churn Risk Exposure */}
-          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group hover:border-rose-300">
+            <div className="absolute top-0 left-0 right-0 h-1.5 card-accent-rose"></div>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-500">
                   Churn Risk Exposure
                 </span>
-                <div className="text-2xl sm:text-3xl font-bold text-rose-600 font-mono-nums mt-0.5">
+                <div className="text-2xl sm:text-3xl font-extrabold text-rose-600 font-mono-nums mt-0.5">
                   {overview ? overview.total_churned.toLocaleString() : '--'}
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
                 <UserX className="w-5 h-5 text-rose-600" />
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">Baseline Churn Rate:</span>
-              <span className="font-mono font-bold text-rose-600">
+              <span className="font-mono font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
                 {overview ? `${overview.churn_rate_pct}%` : '--'}
               </span>
             </div>
@@ -353,24 +363,24 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           {/* Card 4: Retained Accounts */}
-          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group hover:border-emerald-300">
+            <div className="absolute top-0 left-0 right-0 h-1.5 card-accent-emerald"></div>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-500">
                   Retained Enterprise Base
                 </span>
-                <div className="text-2xl sm:text-3xl font-bold text-emerald-600 font-mono-nums mt-0.5">
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 font-mono-nums mt-0.5">
                   {overview ? overview.total_retained.toLocaleString() : '--'}
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
                 <UserCheck className="w-5 h-5 text-emerald-600" />
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-500 font-medium">Portfolio Retention:</span>
-              <span className="font-mono font-bold text-emerald-600">
+              <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                 {overview ? `${overview.retention_rate_pct}%` : '--'}
               </span>
             </div>
@@ -395,21 +405,24 @@ export const DashboardHome: React.FC = () => {
         </div>
       )}
 
-      {/* ── 4. Real Interactive Visualizations ───────────────────────── */}
+      {/* ── 4. Real Interactive Visualizations with Rich Colors ───────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart 1: Contract Vulnerability Analysis */}
         <div className="card-enterprise p-6 space-y-4 bg-white">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                Contract Type Risk Vulnerability
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                <h3 className="text-base font-bold text-slate-900">
+                  Contract Type Risk Vulnerability
+                </h3>
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Cohort comparison: Retained vs Churned accounts
               </p>
             </div>
-            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">
+            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
               {overview?.total_customers ? `${overview.total_customers.toLocaleString()} Records` : 'Active Portfolio'}
             </span>
           </div>
@@ -425,21 +438,21 @@ export const DashboardHome: React.FC = () => {
                     `${Number(value).toLocaleString()} accounts`,
                     name === 'retained' ? 'Retained Accounts' : 'Churned Accounts'
                   ]}
-                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                 />
                 <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="retained" name="Retained" fill="#0F172A" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="churned" name="Churned" fill="#F43F5E" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="retained" name="Retained" fill="#4F46E5" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="churned" name="Churned" fill="#F43F5E" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-            <span className="text-slate-600">
-              Month-to-Month accounts churn at <strong>{m2mRate}%</strong> vs <strong>{twoYrRate}%</strong> for 2-Year Contracts.
+          <div className="p-3 bg-gradient-to-r from-rose-50/70 to-orange-50/50 rounded-xl border border-rose-100 flex items-center justify-between text-xs">
+            <span className="text-slate-700">
+              Month-to-Month accounts churn at <strong className="text-rose-600">{m2mRate}%</strong> vs <strong className="text-emerald-700">{twoYrRate}%</strong> for 2-Year Contracts.
             </span>
             {hazardMultiplier && (
-              <span className="font-bold text-rose-600">+{hazardMultiplier}x Hazard Ratio</span>
+              <span className="font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">+{hazardMultiplier}x Hazard</span>
             )}
           </div>
         </div>
@@ -448,14 +461,17 @@ export const DashboardHome: React.FC = () => {
         <div className="card-enterprise p-6 space-y-4 bg-white">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                Tenure Longevity & Retention Curve
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                <h3 className="text-base font-bold text-slate-900">
+                  Tenure Longevity & Retention Curve
+                </h3>
+              </div>
               <p className="text-xs text-slate-500 mt-0.5">
                 Churn hazard drops sharply as customer tenure increases
               </p>
             </div>
-            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">
+            <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200">
               Tenure Curve
             </span>
           </div>
@@ -465,8 +481,8 @@ export const DashboardHome: React.FC = () => {
               <AreaChart data={tenureChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="tenureGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
@@ -474,14 +490,14 @@ export const DashboardHome: React.FC = () => {
                 <YAxis stroke="#64748B" fontSize={12} tickLine={false} unit="%" />
                 <Tooltip
                   formatter={(value: any) => [`${value}% Churn Hazard Rate`, 'Cohort Churn %']}
-                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
+                  contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="churn_rate"
                   name="Churn Rate (%)"
-                  stroke="#0F172A"
-                  strokeWidth={2.5}
+                  stroke="#0891B2"
+                  strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#tenureGradient)"
                 />
@@ -489,12 +505,12 @@ export const DashboardHome: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-            <span className="text-slate-600">
+          <div className="p-3 bg-gradient-to-r from-cyan-50/70 to-emerald-50/50 rounded-xl border border-cyan-100 flex items-center justify-between text-xs">
+            <span className="text-slate-700">
               Accounts active for 4+ years experience only <strong className="text-emerald-700">{fourYrRate}%</strong> churn.
             </span>
             {tenureRiskDrop !== null && (
-              <span className="font-bold text-emerald-700">{tenureRiskDrop}% Risk Drop</span>
+              <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">{tenureRiskDrop}% Risk Drop</span>
             )}
           </div>
         </div>
@@ -506,42 +522,56 @@ export const DashboardHome: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-900">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
                 Model Explainability
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-slate-600">Tree-Gain Feature Weights</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1.5">
               Top Decision Drivers for Customer Churn
             </h3>
           </div>
-          <div className="text-xs text-slate-600 font-mono bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
-            Pipeline Features: <strong>{totalFeaturesCount} Engineered</strong>
+          <div className="text-xs text-slate-700 font-mono bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs">
+            Pipeline Features: <strong className="text-indigo-600">{totalFeaturesCount} Engineered</strong>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
           {featureChartData.length > 0 ? (
-            featureChartData.slice(0, 8).map((feat, idx) => (
-              <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-slate-800 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-slate-100 text-slate-700 text-[10px] font-mono flex items-center justify-center font-bold border border-slate-200">
-                      #{idx + 1}
+            featureChartData.slice(0, 8).map((feat, idx) => {
+              const gradients = [
+                'from-indigo-600 to-blue-500',
+                'from-blue-600 to-cyan-500',
+                'from-cyan-600 to-teal-500',
+                'from-teal-600 to-emerald-500',
+                'from-purple-600 to-pink-500',
+                'from-violet-600 to-indigo-500',
+                'from-amber-500 to-orange-500',
+                'from-rose-500 to-red-500'
+              ]
+              const gradientClass = gradients[idx % gradients.length]
+
+              return (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex justify-between items-center text-xs font-semibold">
+                    <span className="text-slate-800 flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-mono flex items-center justify-center font-bold border border-indigo-200">
+                        #{idx + 1}
+                      </span>
+                      {feat.label}
                     </span>
-                    {feat.label}
-                  </span>
-                  <span className="font-mono text-slate-900 font-bold">{feat.importance_pct}%</span>
+                    <span className="font-mono text-indigo-700 font-bold">{feat.importance_pct}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${gradientClass}`}
+                      style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#0F172A]"
-                    style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))
+              )
+            })
           ) : (
             <div className="col-span-2 text-center py-4 text-xs text-slate-400">Loading model features...</div>
           )}
@@ -554,26 +584,26 @@ export const DashboardHome: React.FC = () => {
         <div className="p-5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-900">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                 Verified Cohort Audit
               </span>
               <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                 Scored by XGBoost
               </span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
               Customer Account Profiles & Live Predictions
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Benchmark records with real features from <span className="font-mono font-medium">WA_Fn-UseC_-Telco-Customer-Churn.csv</span>.
+              Benchmark records with real features from <span className="font-mono font-medium text-slate-700">WA_Fn-UseC_-Telco-Customer-Churn.csv</span>.
             </p>
           </div>
 
           {/* Interactive Search Bar & Row Count */}
           <div className="flex items-center gap-3">
             <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-indigo-500 absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Search Account ID, Contract, or Service..."
@@ -582,16 +612,16 @@ export const DashboardHome: React.FC = () => {
                 className="input-enterprise w-full pl-8.5 pr-3 py-1.5 text-xs font-mono"
               />
             </div>
-            <div className="text-xs font-mono font-bold text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 shrink-0">
-              {filteredCustomers.length} Shown
+            <div className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-md border border-indigo-200 shrink-0">
+              {filteredCustomers.length} Accounts
             </div>
           </div>
         </div>
 
         {/* Quick Filter Tabs */}
-        <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-2">
+        <div className="px-5 py-2.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-bold uppercase text-slate-500 mr-1 flex items-center gap-1">
-            <Filter className="w-3 h-3" />
+            <Filter className="w-3 h-3 text-indigo-600" />
             <span>Filter Cohort:</span>
           </span>
 
@@ -605,10 +635,10 @@ export const DashboardHome: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setCohortFilter(tab.key)}
-              className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 cohortFilter === tab.key
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-100'
+                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:text-indigo-600 border border-slate-200 hover:bg-indigo-50/40'
               }`}
             >
               {tab.label}
@@ -644,7 +674,9 @@ export const DashboardHome: React.FC = () => {
 
                     {/* Contract */}
                     <td className="py-3.5 px-4 text-slate-700 font-medium">
-                      {row.Contract}
+                      <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800">
+                        {row.Contract}
+                      </span>
                     </td>
 
                     {/* Internet Service */}
@@ -665,13 +697,13 @@ export const DashboardHome: React.FC = () => {
                     {/* Ground Truth Outcome */}
                     <td className="py-3.5 px-4">
                       {row.actual_churn === 'Yes' ? (
-                        <span className="inline-flex items-center gap-1 font-semibold text-rose-600">
-                          <UserX className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1 font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          <UserX className="w-3 h-3" />
                           Churned
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                          <UserCheck className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          <UserCheck className="w-3 h-3" />
                           Retained
                         </span>
                       )}
@@ -699,10 +731,10 @@ export const DashboardHome: React.FC = () => {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleSimulate(row)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-slate-400 text-slate-800 hover:text-slate-900 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-50 border border-indigo-200 hover:bg-indigo-600 hover:text-white text-indigo-700 text-xs font-semibold shadow-xs transition-all cursor-pointer"
                         title="Load customer profile into Single Risk Evaluator"
                       >
-                        <SlidersHorizontal className="w-3 h-3 text-slate-600" />
+                        <SlidersHorizontal className="w-3 h-3" />
                         <span>Simulate</span>
                       </button>
                     </td>
@@ -727,11 +759,12 @@ export const DashboardHome: React.FC = () => {
         
         <Link
           to="/dashboard/single"
-          className="card-enterprise p-5 hover:border-slate-400 transition-all group flex items-start justify-between bg-white"
+          className="card-enterprise p-6 hover:border-indigo-300 transition-all group flex items-start justify-between bg-white relative overflow-hidden"
         >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-500"></div>
           <div className="space-y-2">
-            <div className="w-9 h-9 rounded-lg bg-[#0F172A] text-white flex items-center justify-center shadow-xs">
-              <UserCheck className="w-4.5 h-4.5" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <UserCheck className="w-5 h-5 text-white" />
             </div>
             <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
               Single Account Risk Evaluator
@@ -740,25 +773,26 @@ export const DashboardHome: React.FC = () => {
               Evaluate real-time churn probability and risk tier for an individual customer with contract and demographic controls.
             </p>
           </div>
-          <ArrowUpRight className="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <ArrowUpRight className="w-5 h-5 text-indigo-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </Link>
 
         <Link
           to="/dashboard/batch"
-          className="card-enterprise p-5 hover:border-slate-400 transition-all group flex items-start justify-between bg-white"
+          className="card-enterprise p-6 hover:border-cyan-300 transition-all group flex items-start justify-between bg-white relative overflow-hidden"
         >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-teal-500"></div>
           <div className="space-y-2">
-            <div className="w-9 h-9 rounded-lg bg-[#0F172A] text-white flex items-center justify-center shadow-xs">
-              <FileSpreadsheet className="w-4.5 h-4.5" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+              <FileSpreadsheet className="w-5 h-5 text-white" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+            <h3 className="text-base font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">
               High-Speed Batch CSV Engine
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed max-w-md">
               Upload customer portfolio CSV files to score thousands of accounts in seconds with automated feature engineering.
             </p>
           </div>
-          <ArrowUpRight className="w-4.5 h-4.5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <ArrowUpRight className="w-5 h-5 text-cyan-400 group-hover:text-cyan-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </Link>
 
       </div>

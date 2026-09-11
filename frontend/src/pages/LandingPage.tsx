@@ -257,26 +257,36 @@ export const LandingPage: React.FC = () => {
   const featureDrivers = analytics?.feature_importances?.slice(0, 4) || []
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-slate-200 selection:text-slate-900">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-950">
       <Navbar />
 
-      {/* ── 1. Hero Section ─────────────────────────────────────────── */}
-      <section className="relative pt-12 pb-16 md:pt-16 md:pb-20 border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── 1. Hero Section with Colorful Ambient Highlights ──────────── */}
+      <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 border-b border-slate-200/80 bg-white overflow-hidden">
+        {/* Ambient Gradient Blobs */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-indigo-100/50 rounded-full blur-3xl pointer-events-none -z-0"></div>
+        <div className="absolute bottom-0 left-10 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none -z-0"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* Left Column: Headlines & Actions */}
             <div className="lg:col-span-7 space-y-6 text-left">
               
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 text-slate-800 text-xs font-semibold rounded-md border border-slate-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 bg-gradient-to-r from-indigo-50 via-blue-50 to-cyan-50 text-indigo-900 text-xs font-semibold rounded-full border border-indigo-200/80 shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
                 <span>Production-Ready MLOps Platform</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-slate-600 font-mono">IBM Telco Cohort ({overview?.total_customers?.toLocaleString() || '7,043'} Records)</span>
+                <span className="text-indigo-700 font-mono">IBM Telco ({overview?.total_customers?.toLocaleString() || '7,043'} Records)</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.18]">
-                Telecom Customer Churn Risk & Retention Management
+                Telecom Customer Churn{' '}
+                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                  Risk & Retention Management
+                </span>
               </h1>
 
               <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed max-w-xl">
@@ -291,89 +301,100 @@ export const LandingPage: React.FC = () => {
                 >
                   <UserCheck className="w-4 h-4" />
                   <span>Evaluate Account Risk</span>
-                  <ArrowRight className="w-4 h-4 text-slate-300" />
+                  <ArrowRight className="w-4 h-4 text-indigo-200" />
                 </Link>
 
                 <Link
                   to="/dashboard"
-                  className="btn-secondary"
+                  className="btn-secondary hover:border-indigo-200 hover:bg-indigo-50/50"
                 >
-                  <BarChart3 className="w-4 h-4 text-slate-500" />
+                  <BarChart3 className="w-4 h-4 text-indigo-600" />
                   <span>Executive Dashboard</span>
                 </Link>
 
                 <Link
                   to="/dashboard/batch"
-                  className="btn-secondary"
+                  className="btn-secondary hover:border-cyan-200 hover:bg-cyan-50/50"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-slate-500" />
+                  <FileSpreadsheet className="w-4 h-4 text-cyan-600" />
                   <span>Batch CSV Engine</span>
                 </Link>
               </div>
 
-              {/* Performance Metrics Strip */}
-              <div className="pt-6 grid grid-cols-4 gap-4 border-t border-slate-200">
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+              {/* Performance Metrics Strip with colorful numbers */}
+              <div className="pt-6 grid grid-cols-4 gap-4 border-t border-slate-200/80">
+                <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="text-xl sm:text-2xl font-extrabold text-indigo-600 font-mono-nums">
                     {metrics ? `${(metrics.test_accuracy * 100).toFixed(1)}%` : '--'}
                   </div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">Test Accuracy</div>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">Test Accuracy</div>
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+                <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="text-xl sm:text-2xl font-extrabold text-blue-600 font-mono-nums">
                     {metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '--'}
                   </div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">Early Catch Recall</div>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">Early Catch Recall</div>
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+                <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="text-xl sm:text-2xl font-extrabold text-purple-600 font-mono-nums">
                     {metrics ? metrics.roc_auc.toFixed(4) : '--'}
                   </div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">ROC-AUC Score</div>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">ROC-AUC Score</div>
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono-nums">
+                <div className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 font-mono-nums">
                     {latencyMs !== null ? `${latencyMs}ms` : '--'}
                   </div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">Inference Latency</div>
+                  <div className="text-[11px] text-slate-500 font-medium mt-0.5">Inference Latency</div>
                 </div>
               </div>
 
             </div>
 
-            {/* Right Column: Live Interactive Sandbox */}
+            {/* Right Column: Live Interactive Sandbox with Colorful Badges */}
             <div className="lg:col-span-5">
-              <div className="card-enterprise p-6 bg-white border-slate-200 space-y-4">
+              <div className="card-enterprise p-6 bg-white/95 border-indigo-100 shadow-lg shadow-indigo-500/5 space-y-4 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-400"></div>
                 
                 {/* Sandbox Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+                    </span>
                     <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                       Interactive Risk Sandbox
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                  <span className="text-xs font-mono font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
                     Live XGBoost Inference
                   </span>
                 </div>
 
                 {/* Account Presets */}
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg">
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/80 rounded-xl">
                   {sampleArchetypes.length > 0 ? (
-                    sampleArchetypes.map((archetype, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleArchetypeSelect(idx)}
-                        className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-all text-center cursor-pointer ${
-                          selectedDemoIdx === idx
-                            ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                        }`}
-                      >
-                        {idx === 0 ? 'High Risk' : idx === 1 ? 'Moderate' : 'Retained'}
-                      </button>
-                    ))
+                    sampleArchetypes.map((archetype, idx) => {
+                      const isSelected = selectedDemoIdx === idx
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleArchetypeSelect(idx)}
+                          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                            isSelected
+                              ? idx === 0
+                                ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs'
+                                : idx === 1
+                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs'
+                                : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                          }`}
+                        >
+                          {idx === 0 ? 'High Risk' : idx === 1 ? 'Moderate' : 'Retained'}
+                        </button>
+                      )
+                    })
                   ) : (
                     <div className="col-span-3 text-center py-1 text-xs text-slate-400">Loading dataset archetypes...</div>
                   )}
@@ -381,7 +402,7 @@ export const LandingPage: React.FC = () => {
 
                 {/* Selected Account Telemetry Box */}
                 {currentArchetype ? (
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="p-4.5 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-slate-200/90 space-y-3.5 shadow-2xs">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-xs font-bold text-slate-900 font-mono">
@@ -391,7 +412,7 @@ export const LandingPage: React.FC = () => {
                           {currentArchetype.subtitle}
                         </div>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase font-mono ${
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono ${
                         displayedRisk === 'High Risk'
                           ? 'bg-rose-100 text-rose-800 border border-rose-200'
                           : displayedRisk === 'Medium Risk'
@@ -403,19 +424,19 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     {/* Probability Bar */}
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex justify-between text-xs font-semibold">
                         <span className="text-slate-600 flex items-center gap-1.5">
                           <span>Live Model Probability:</span>
                           {scoringLoading && <RefreshCw className="w-3 h-3 text-indigo-500 animate-spin" />}
                         </span>
-                        <span className="font-mono text-slate-900 font-bold">{displayedProb}%</span>
+                        <span className="font-mono text-slate-900 font-extrabold text-sm">{displayedProb}%</span>
                       </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden p-0.5">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
-                            displayedProb >= 60 ? 'bg-rose-500' :
-                            displayedProb >= 35 ? 'bg-amber-500' : 'bg-emerald-500'
+                            displayedProb >= 60 ? 'bg-gradient-to-r from-rose-500 to-red-600' :
+                            displayedProb >= 35 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-emerald-400 to-teal-500'
                           }`}
                           style={{ width: `${displayedProb}%` }}
                         ></div>
@@ -424,12 +445,12 @@ export const LandingPage: React.FC = () => {
 
                     {/* Key Factors for Account */}
                     <div className="pt-2 border-t border-slate-200/80 space-y-1">
-                      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         Observed Account Drivers
                       </div>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {currentArchetype.factors.map((factor: string, fIdx: number) => (
-                          <span key={fIdx} className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 font-medium">
+                          <span key={fIdx} className="text-[10px] bg-white text-slate-700 px-2.5 py-0.5 rounded-md border border-slate-200 font-medium shadow-2xs">
                             {factor}
                           </span>
                         ))}
@@ -439,8 +460,8 @@ export const LandingPage: React.FC = () => {
                     {/* Tenure Adjustment Slider */}
                     <div className="pt-2 border-t border-slate-200 space-y-1.5">
                       <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-500 font-medium">Adjust Tenure Simulation:</span>
-                        <span className="font-mono font-bold text-slate-800">{interactiveTenure} Months</span>
+                        <span className="text-slate-600 font-medium">Adjust Tenure Simulation:</span>
+                        <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">{interactiveTenure} Months</span>
                       </div>
                       <input
                         type="range"
@@ -448,7 +469,7 @@ export const LandingPage: React.FC = () => {
                         max="72"
                         value={interactiveTenure}
                         onChange={(e) => setInteractiveTenure(parseInt(e.target.value))}
-                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                       />
                       <div className="flex justify-between text-[10px] text-slate-400 font-mono">
                         <span>1 mo (New Signup)</span>
@@ -463,10 +484,10 @@ export const LandingPage: React.FC = () => {
                 {/* Simulate Button */}
                 <button
                   onClick={handleLaunchSimulation}
-                  className="w-full btn-primary text-xs py-2 justify-center shadow-xs cursor-pointer"
+                  className="w-full btn-primary text-xs py-2.5 justify-center shadow-md cursor-pointer"
                 >
                   <span>Simulate 20 Attributes in Single Risk Page</span>
-                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                  <ChevronRight className="w-4 h-4 text-indigo-200" />
                 </button>
 
               </div>
@@ -476,13 +497,13 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 2. Platform Capabilities Section ────────────────────────── */}
-      <section className="py-14 md:py-18 bg-[#F8FAFC]">
+      {/* ── 2. Platform Capabilities Section with Colored Module Cards ─ */}
+      <section className="py-14 md:py-20 bg-[#F8FAFC]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Platform Modules</h2>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">Platform Modules</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 pt-1">
               Enterprise Retention & Risk Architecture
             </p>
             <p className="text-xs sm:text-sm text-slate-600">
@@ -493,12 +514,12 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             
             {/* Module 1 */}
-            <div className="card-enterprise p-5 bg-white space-y-4 flex flex-col justify-between group">
+            <div className="card-enterprise p-6 bg-white space-y-4 flex flex-col justify-between group hover:border-indigo-300">
               <div className="space-y-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-                  <UserCheck className="w-4.5 h-4.5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                  <UserCheck className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                   Single Account Risk
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -517,20 +538,20 @@ export const LandingPage: React.FC = () => {
               </div>
               <Link
                 to="/dashboard/single"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-indigo-600 pt-3 border-t border-slate-100"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 pt-3 border-t border-slate-100"
               >
                 <span>Launch Single Evaluator</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronRight className="w-3.5 h-3.5 text-indigo-400 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
             {/* Module 2 */}
-            <div className="card-enterprise p-5 bg-white space-y-4 flex flex-col justify-between group">
+            <div className="card-enterprise p-6 bg-white space-y-4 flex flex-col justify-between group hover:border-cyan-300">
               <div className="space-y-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-                  <UploadCloud className="w-4.5 h-4.5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+                  <UploadCloud className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">
                   Batch CSV Engine
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -549,20 +570,20 @@ export const LandingPage: React.FC = () => {
               </div>
               <Link
                 to="/dashboard/batch"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-indigo-600 pt-3 border-t border-slate-100"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-600 hover:text-cyan-800 pt-3 border-t border-slate-100"
               >
                 <span>Upload CSV Dataset</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronRight className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
             {/* Module 3 */}
-            <div className="card-enterprise p-5 bg-white space-y-4 flex flex-col justify-between group">
+            <div className="card-enterprise p-6 bg-white space-y-4 flex flex-col justify-between group hover:border-purple-300">
               <div className="space-y-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-                  <BarChart3 className="w-4.5 h-4.5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-md shadow-purple-500/20 group-hover:scale-105 transition-transform">
+                  <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
                   Executive Telemetry
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -581,20 +602,20 @@ export const LandingPage: React.FC = () => {
               </div>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-indigo-600 pt-3 border-t border-slate-100"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-800 pt-3 border-t border-slate-100"
               >
                 <span>View Executive KPIs</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronRight className="w-3.5 h-3.5 text-purple-400 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
             {/* Module 4 */}
-            <div className="card-enterprise p-5 bg-white space-y-4 flex flex-col justify-between group">
+            <div className="card-enterprise p-6 bg-white space-y-4 flex flex-col justify-between group hover:border-amber-300">
               <div className="space-y-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
-                  <Cpu className="w-4.5 h-4.5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 group-hover:scale-105 transition-transform">
+                  <Cpu className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
                   Model Governance
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -613,10 +634,10 @@ export const LandingPage: React.FC = () => {
               </div>
               <Link
                 to="/dashboard/performance"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-indigo-600 pt-3 border-t border-slate-100"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-800 pt-3 border-t border-slate-100"
               >
                 <span>Inspect Model Metrics</span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
@@ -629,8 +650,8 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Model Decision Drivers</h2>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">Model Decision Drivers</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 pt-1">
               Primary Churn Catalysts in XGBoost Model
             </p>
             <p className="text-xs sm:text-sm text-slate-600">
@@ -640,27 +661,36 @@ export const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featureDrivers.length > 0 ? (
-              featureDrivers.map((feat: any, idx: number) => (
-                <div key={idx} className="card-enterprise p-5 bg-white border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900">{feat.label}</span>
-                    <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200">
-                      {feat.importance_pct}% Weight
-                    </span>
-                  </div>
+              featureDrivers.map((feat: any, idx: number) => {
+                const gradients = [
+                  'from-indigo-600 to-blue-500',
+                  'from-blue-600 to-cyan-500',
+                  'from-cyan-600 to-teal-500',
+                  'from-purple-600 to-pink-500'
+                ]
+                const grad = gradients[idx % gradients.length]
+                return (
+                  <div key={idx} className="card-enterprise p-5 bg-white border-slate-200 space-y-3 hover:border-indigo-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-900">{feat.label}</span>
+                      <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                        {feat.importance_pct}% Weight
+                      </span>
+                    </div>
 
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-slate-900 h-full rounded-full"
-                      style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
-                    ></div>
-                  </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className={`bg-gradient-to-r ${grad} h-full rounded-full`}
+                        style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
+                      ></div>
+                    </div>
 
-                  <div className="text-[11px] text-slate-500 font-mono">
-                    Feature Token: {feat.raw_name}
+                    <div className="text-[11px] text-slate-500 font-mono">
+                      Feature: {feat.raw_name}
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             ) : (
               <div className="col-span-4 text-center py-6 text-xs text-slate-400">Loading model feature drivers...</div>
             )}
@@ -669,52 +699,55 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 4. Financial Retention ROI Calculator ───────────────────── */}
-      <section className="py-14 md:py-18 bg-[#F8FAFC] border-t border-slate-200">
+      {/* ── 4. Financial Retention ROI Calculator with Rich Color Accents ─ */}
+      <section className="py-14 md:py-18 bg-gradient-to-b from-[#F8FAFC] to-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-5 space-y-4">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 text-slate-800 text-xs font-semibold rounded-md border border-slate-200">
-                <DollarSign className="w-3.5 h-3.5 text-slate-700" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-full border border-emerald-200">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Financial Impact of Early Catch</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Preserve High-Value Revenue with Early Intervention
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                In the verified {overview?.total_customers?.toLocaleString() || '7,043'} customer cohort, baseline churn puts <strong>{grossLoss}/month</strong> of recurring revenue at immediate risk. Our recall-optimized model catches <strong>{metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '70.6%'} of at-risk customers</strong> before they cancel.
+                In the verified {overview?.total_customers?.toLocaleString() || '7,043'} customer cohort, baseline churn puts <strong className="text-rose-600">{grossLoss}/month</strong> of recurring revenue at immediate risk. Our recall-optimized model catches <strong className="text-emerald-700">{metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '70.6%'} of at-risk customers</strong> before they cancel.
               </p>
 
               <div className="pt-2">
                 <Link
                   to="/dashboard"
-                  className="btn-secondary text-xs"
+                  className="btn-secondary text-xs hover:border-indigo-200 hover:text-indigo-600"
                 >
-                  <BarChart3 className="w-4 h-4 text-slate-600" />
+                  <BarChart3 className="w-4 h-4 text-indigo-600" />
                   <span>Inspect Cohort Revenue Metrics</span>
                 </Link>
               </div>
             </div>
 
             <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
+              <div className="p-5 rounded-2xl bg-white border border-blue-100 space-y-2 shadow-xs relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
                 <div className="text-xs text-slate-500 font-semibold">Total Revenue Pool</div>
-                <div className="text-2xl font-bold text-slate-900 font-mono-nums">{totalRevenue}</div>
+                <div className="text-2xl font-extrabold text-slate-900 font-mono-nums">{totalRevenue}</div>
                 <div className="text-[11px] text-slate-500">Monthly portfolio run-rate</div>
               </div>
 
-              <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
+              <div className="p-5 rounded-2xl bg-white border border-rose-100 space-y-2 shadow-xs relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-red-500"></div>
                 <div className="text-xs text-rose-700 font-semibold">Gross Churn Exposure</div>
-                <div className="text-2xl font-bold text-rose-700 font-mono-nums">{grossLoss}</div>
+                <div className="text-2xl font-extrabold text-rose-600 font-mono-nums">{grossLoss}</div>
                 <div className="text-[11px] text-slate-500">Monthly revenue at risk</div>
               </div>
 
-              <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
+              <div className="p-5 rounded-2xl bg-white border border-emerald-100 space-y-2 shadow-xs relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
                 <div className="text-xs text-emerald-800 font-semibold">Preserved with Catch</div>
-                <div className="text-2xl font-bold text-emerald-700 font-mono-nums">{preservedCatch}</div>
+                <div className="text-2xl font-extrabold text-emerald-600 font-mono-nums">{preservedCatch}</div>
                 <div className="text-[11px] text-slate-500">Flagged for early retention</div>
               </div>
             </div>
@@ -728,15 +761,15 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pipeline Architecture</h2>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">Pipeline Architecture</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 pt-1">
               End-to-End Operational Workflow
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 text-left">
-            <div className="card-enterprise p-5 bg-white space-y-2.5">
-              <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
+            <div className="card-enterprise p-5 bg-white space-y-3 hover:border-blue-300">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
                 01
               </div>
               <div className="text-sm font-bold text-slate-900">Cleansing & Encodings</div>
@@ -745,8 +778,8 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="card-enterprise p-5 bg-white space-y-2.5">
-              <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
+            <div className="card-enterprise p-5 bg-white space-y-3 hover:border-purple-300">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
                 02
               </div>
               <div className="text-sm font-bold text-slate-900">Gradient Boosted Tree</div>
@@ -755,8 +788,8 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="card-enterprise p-5 bg-white space-y-2.5">
-              <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
+            <div className="card-enterprise p-5 bg-white space-y-3 hover:border-cyan-300">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-500 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
                 03
               </div>
               <div className="text-sm font-bold text-slate-900">FastAPI Microservice</div>
@@ -765,8 +798,8 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="card-enterprise p-5 bg-white space-y-2.5">
-              <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
+            <div className="card-enterprise p-5 bg-white space-y-3 hover:border-emerald-300">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
                 04
               </div>
               <div className="text-sm font-bold text-slate-900">Executive Decision Portal</div>
@@ -784,8 +817,8 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Questions & Architecture</h2>
-            <p className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">Questions & Architecture</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 pt-1">
               Frequently Asked Questions
             </p>
           </div>
@@ -794,16 +827,16 @@ export const LandingPage: React.FC = () => {
             {FAQ_ITEMS.map((item, idx) => {
               const isOpen = openFaqIdx === idx
               return (
-                <div key={idx} className="bg-white border border-slate-200 rounded-xl overflow-hidden transition-all shadow-2xs">
+                <div key={idx} className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden transition-all shadow-2xs hover:border-indigo-200">
                   <button
                     onClick={() => toggleFaq(idx)}
-                    className="w-full p-4.5 text-left flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                    className="w-full p-4.5 text-left flex items-center justify-between gap-4 hover:bg-indigo-50/20 transition-colors cursor-pointer"
                   >
                     <span className="text-sm font-bold text-slate-900">{item.question}</span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-slate-500 shrink-0" />
+                      <ChevronUp className="w-4 h-4 text-indigo-600 shrink-0" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
                   </button>
                   {isOpen && (
@@ -826,7 +859,7 @@ export const LandingPage: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="font-semibold text-slate-800">Telecom Churn Predictor MLOps System</span>
             <span className="text-slate-300">•</span>
-            <span>FastAPI + XGBoost Inference Engine</span>
+            <span className="text-indigo-600 font-medium">FastAPI + XGBoost Inference Engine</span>
           </div>
           <div>
             <span>Dataset Provenance: IBM Telco Customer Churn ({overview?.total_customers?.toLocaleString() || '7,043'} Records)</span>

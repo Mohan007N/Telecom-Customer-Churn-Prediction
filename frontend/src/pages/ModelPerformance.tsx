@@ -11,7 +11,8 @@ import {
   Sliders,
   TrendingDown,
   TrendingUp,
-  Info
+  Info,
+  Target
 } from 'lucide-react'
 import { churnAPI } from '../services/api'
 
@@ -80,6 +81,7 @@ export const ModelPerformance: React.FC = () => {
       value: metrics?.test_accuracy !== undefined ? `${(metrics.test_accuracy * 100).toFixed(2)}%` : '--',
       benchmark: metrics?.train_accuracy !== undefined ? `${(metrics.train_accuracy * 100).toFixed(2)}% (Train)` : 'Target: >75.0%',
       status: 'Production Calibrated',
+      statusColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
       desc: totalSamples > 0
         ? `Overall correct classifications on hold-out test accounts (${totalSamples.toLocaleString()} Samples)`
         : 'Overall correct classifications on hold-out test accounts'
@@ -88,7 +90,8 @@ export const ModelPerformance: React.FC = () => {
       metric: 'Recall / Sensitivity',
       value: metrics?.recall !== undefined ? `${(metrics.recall * 100).toFixed(2)}%` : '--',
       benchmark: 'Target: >70.0%',
-      status: 'Primary Optimization Target',
+      status: 'Primary Target',
+      statusColor: 'bg-indigo-50 text-indigo-800 border-indigo-200',
       desc: 'Catches defection warning signals before customers terminate service'
     },
     {
@@ -96,6 +99,7 @@ export const ModelPerformance: React.FC = () => {
       value: metrics?.roc_auc !== undefined ? metrics.roc_auc.toFixed(4) : '--',
       benchmark: 'Target: >0.8000',
       status: 'High Discrimination',
+      statusColor: 'bg-purple-50 text-purple-800 border-purple-200',
       desc: 'Area under Receiver Operating Characteristic curve'
     },
     {
@@ -103,6 +107,7 @@ export const ModelPerformance: React.FC = () => {
       value: metrics?.precision !== undefined ? `${(metrics.precision * 100).toFixed(2)}%` : '--',
       benchmark: 'Balanced Catch',
       status: 'Retention Alert Quality',
+      statusColor: 'bg-blue-50 text-blue-800 border-blue-200',
       desc: 'Ratio of true churners among all flagged accounts'
     },
     {
@@ -110,6 +115,7 @@ export const ModelPerformance: React.FC = () => {
       value: metrics?.f1_score !== undefined ? metrics.f1_score.toFixed(4) : '--',
       benchmark: 'Harmonic Mean',
       status: 'Optimal Tradeoff',
+      statusColor: 'bg-cyan-50 text-cyan-800 border-cyan-200',
       desc: 'Harmonic balance between precision and early intervention recall'
     },
     {
@@ -117,17 +123,18 @@ export const ModelPerformance: React.FC = () => {
       value: specificityVal !== null ? `${specificityVal}%` : '--',
       benchmark: 'True Negative Rate',
       status: 'Reliable Baseline',
+      statusColor: 'bg-teal-50 text-teal-800 border-teal-200',
       desc: 'True retention rate identification among loyal customer base'
     },
   ]
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 font-sans selection:bg-indigo-500/20 selection:text-indigo-950">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200/80">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200 shadow-2xs">
               Model Telemetry & Evaluation
             </span>
             <span className="text-xs text-slate-400">•</span>
@@ -144,66 +151,74 @@ export const ModelPerformance: React.FC = () => {
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
-          Calibrated Cutoff: <strong className="text-indigo-600 font-bold">τ = {optimalT !== null ? optimalT.toFixed(2) : '--'}</strong>
+        <div className="text-xs font-mono text-slate-700 bg-white/90 px-3.5 py-2 rounded-xl border border-purple-100 shadow-xs flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+          <span>Calibrated Cutoff: <strong className="text-purple-700 font-bold">τ = {optimalT !== null ? optimalT.toFixed(2) : '--'}</strong></span>
         </div>
       </div>
 
-      {/* Metrics Cards */}
+      {/* Metrics Cards with Rich Accents */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="card-enterprise p-4 bg-white">
+        <div className="card-enterprise p-4.5 bg-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-line"></div>
           <div className="text-xs font-semibold text-slate-500">Test Accuracy</div>
-          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">
+          <div className="text-2xl font-extrabold text-blue-600 font-mono-nums mt-1">
             {metrics?.test_accuracy !== undefined ? `${(metrics.test_accuracy * 100).toFixed(1)}%` : '--'}
           </div>
           <div className="text-[11px] text-slate-400 mt-1 font-medium">Overall correctness</div>
         </div>
 
-        <div className="card-enterprise p-4 bg-white border-indigo-200">
+        <div className="card-enterprise p-4.5 bg-white border-indigo-200 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-purple"></div>
           <div className="text-xs font-semibold text-indigo-600">Recall / Sensitivity</div>
-          <div className="text-2xl font-bold text-indigo-600 font-mono-nums mt-1">
+          <div className="text-2xl font-extrabold text-indigo-600 font-mono-nums mt-1">
             {metrics?.recall !== undefined ? `${(metrics.recall * 100).toFixed(1)}%` : '--'}
           </div>
           <div className="text-[11px] text-indigo-600 font-semibold mt-1">Early catch rate</div>
         </div>
 
-        <div className="card-enterprise p-4 bg-white">
+        <div className="card-enterprise p-4.5 bg-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-cyan"></div>
           <div className="text-xs font-semibold text-slate-500">Precision</div>
-          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">
+          <div className="text-2xl font-extrabold text-cyan-600 font-mono-nums mt-1">
             {metrics?.precision !== undefined ? `${(metrics.precision * 100).toFixed(1)}%` : '--'}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-medium">Precision of churn alerts</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Alert precision</div>
         </div>
 
-        <div className="card-enterprise p-4 bg-white">
+        <div className="card-enterprise p-4.5 bg-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-gold"></div>
           <div className="text-xs font-semibold text-slate-500">F1-Score</div>
-          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">
+          <div className="text-2xl font-extrabold text-amber-600 font-mono-nums mt-1">
             {metrics?.f1_score !== undefined ? metrics.f1_score.toFixed(3) : '--'}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-medium">Harmonic mean metric</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Harmonic mean</div>
         </div>
 
-        <div className="card-enterprise p-4 bg-white">
+        <div className="card-enterprise p-4.5 bg-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 card-accent-emerald"></div>
           <div className="text-xs font-semibold text-slate-500">ROC-AUC Score</div>
-          <div className="text-2xl font-bold text-slate-900 font-mono-nums mt-1">
+          <div className="text-2xl font-extrabold text-emerald-600 font-mono-nums mt-1">
             {metrics?.roc_auc !== undefined ? metrics.roc_auc.toFixed(4) : '--'}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1 font-medium">Class separation power</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Class separation</div>
         </div>
       </div>
 
       {/* Interactive Decision Threshold Simulator */}
-      <div className="card-enterprise p-6 sm:p-8 bg-white space-y-6">
+      <div className="card-enterprise p-6 sm:p-8 bg-white space-y-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"></div>
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
                 Interactive Calibration
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-slate-600">Threshold Sensitivity Sandbox</span>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">
               Simulate Decision Cutoff Tradeoffs (τ)
             </h3>
           </div>
@@ -212,7 +227,7 @@ export const ModelPerformance: React.FC = () => {
             {optimalT !== null && (
               <button
                 onClick={() => setSimulatedThreshold(optimalT)}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 px-2.5 py-1 rounded bg-indigo-50 border border-indigo-200 cursor-pointer transition-colors"
+                className="text-xs font-bold text-indigo-700 hover:text-indigo-900 px-3 py-1 rounded-lg bg-indigo-50 border border-indigo-200 cursor-pointer transition-colors shadow-2xs"
               >
                 Reset to Optimal (τ = {optimalT.toFixed(2)})
               </button>
@@ -221,13 +236,13 @@ export const ModelPerformance: React.FC = () => {
         </div>
 
         {/* Slider */}
-        <div className="space-y-2 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <div className="space-y-2 p-5 bg-gradient-to-br from-slate-50 to-indigo-50/20 rounded-2xl border border-slate-200/90">
           <div className="flex justify-between items-center text-xs">
-            <span className="text-slate-700 font-bold flex items-center gap-1.5">
+            <span className="text-slate-800 font-bold flex items-center gap-1.5">
               <Sliders className="w-3.5 h-3.5 text-indigo-600" />
               <span>Inference Cutoff Threshold (τ):</span>
             </span>
-            <span className="font-mono text-base font-extrabold text-indigo-700 bg-white px-3 py-1 rounded border border-indigo-200 shadow-2xs">
+            <span className="font-mono text-base font-extrabold text-indigo-700 bg-white px-3.5 py-1 rounded-xl border border-indigo-200 shadow-xs">
               τ = {currentSliderThreshold.toFixed(2)}
             </span>
           </div>
@@ -239,7 +254,7 @@ export const ModelPerformance: React.FC = () => {
             step="0.01"
             value={currentSliderThreshold}
             onChange={(e) => setSimulatedThreshold(parseFloat(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
           />
 
           <div className="flex justify-between text-[11px] text-slate-500 font-mono">
@@ -253,7 +268,7 @@ export const ModelPerformance: React.FC = () => {
 
         {/* Live Simulator Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 space-y-1">
+          <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
             <div className="text-xs font-semibold text-indigo-700">Simulated Recall</div>
             <div className="text-2xl font-black text-indigo-950 font-mono">
               {metrics ? `${(simulatedRecall * 100).toFixed(1)}%` : '--'}
@@ -263,15 +278,15 @@ export const ModelPerformance: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-            <div className="text-xs font-semibold text-slate-700">Simulated Precision</div>
-            <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 space-y-1">
+            <div className="text-xs font-semibold text-blue-700">Simulated Precision</div>
+            <div className="text-2xl font-black text-blue-950 font-mono">
               {metrics ? `${(simulatedPrecision * 100).toFixed(1)}%` : '--'}
             </div>
-            <div className="text-[11px] text-slate-500">Alert accuracy rate</div>
+            <div className="text-[11px] text-blue-600">Alert accuracy rate</div>
           </div>
 
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-1">
+          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-100 space-y-1">
             <div className="text-xs font-semibold text-amber-800">False Positives (FP)</div>
             <div className="text-2xl font-black text-amber-950 font-mono">
               {cm ? simulatedFP : '--'}
@@ -279,7 +294,7 @@ export const ModelPerformance: React.FC = () => {
             <div className="text-[11px] text-amber-700">Unnecessary outreach calls</div>
           </div>
 
-          <div className="p-4 rounded-xl bg-rose-50 border border-rose-100 space-y-1">
+          <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-100 space-y-1">
             <div className="text-xs font-semibold text-rose-800">False Negatives (FN)</div>
             <div className="text-2xl font-black text-rose-950 font-mono">
               {cm ? simulatedFN : '--'}
@@ -298,14 +313,14 @@ export const ModelPerformance: React.FC = () => {
             <h3 className="text-sm sm:text-base font-bold text-slate-900">
               Confusion Matrix Grid {totalSamples > 0 ? `(${totalSamples.toLocaleString()} Test Samples)` : ''}
             </h3>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200">
+            <span className="text-xs font-mono font-bold px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200">
               Threshold: τ = {optimalT !== null ? optimalT.toFixed(2) : '--'}
             </span>
           </div>
 
           {cm ? (
             <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-4 bg-emerald-50 border border-emerald-200/90 rounded-xl space-y-1">
+              <div className="p-4.5 bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-200/90 rounded-2xl space-y-1 shadow-2xs">
                 <div className="text-xs font-bold text-emerald-800 uppercase">True Negative (TN)</div>
                 <div className="text-3xl font-black text-emerald-950 font-mono">{cm.TN}</div>
                 <div className="text-xs text-emerald-700">
@@ -313,7 +328,7 @@ export const ModelPerformance: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50 border border-amber-200/90 rounded-xl space-y-1">
+              <div className="p-4.5 bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-200/90 rounded-2xl space-y-1 shadow-2xs">
                 <div className="text-xs font-bold text-amber-800 uppercase">False Positive (FP)</div>
                 <div className="text-3xl font-black text-amber-950 font-mono">{cm.FP}</div>
                 <div className="text-xs text-amber-700">
@@ -321,7 +336,7 @@ export const ModelPerformance: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-rose-50 border border-rose-200/90 rounded-xl space-y-1">
+              <div className="p-4.5 bg-gradient-to-br from-rose-50 to-red-50/50 border border-rose-200/90 rounded-2xl space-y-1 shadow-2xs">
                 <div className="text-xs font-bold text-rose-800 uppercase">False Negative (FN)</div>
                 <div className="text-3xl font-black text-rose-950 font-mono">{cm.FN}</div>
                 <div className="text-xs text-rose-700">
@@ -329,7 +344,7 @@ export const ModelPerformance: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-indigo-50 border border-indigo-200/90 rounded-xl space-y-1">
+              <div className="p-4.5 bg-gradient-to-br from-indigo-50 to-blue-50/50 border border-indigo-200/90 rounded-2xl space-y-1 shadow-2xs">
                 <div className="text-xs font-bold text-indigo-800 uppercase">True Positive (TP)</div>
                 <div className="text-3xl font-black text-indigo-950 font-mono">{cm.TP}</div>
                 <div className="text-xs text-indigo-700">
@@ -341,8 +356,8 @@ export const ModelPerformance: React.FC = () => {
             <div className="py-12 text-center text-xs text-slate-400">Loading confusion matrix data...</div>
           )}
 
-          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 leading-relaxed">
-            Decision threshold calibrated to <strong className="text-slate-900 font-mono">{optimalT !== null ? `τ = ${optimalT.toFixed(2)}` : 'calibrated baseline'}</strong> to maximize early intervention recall while maintaining high overall discrimination.
+          <div className="p-3.5 bg-gradient-to-r from-slate-50 to-indigo-50/30 border border-slate-200 rounded-xl text-xs text-slate-600 leading-relaxed">
+            Decision threshold calibrated to <strong className="text-indigo-900 font-mono">{optimalT !== null ? `τ = ${optimalT.toFixed(2)}` : 'calibrated baseline'}</strong> to maximize early intervention recall while maintaining high overall discrimination.
           </div>
         </div>
 
@@ -352,34 +367,46 @@ export const ModelPerformance: React.FC = () => {
             <h3 className="text-sm sm:text-base font-bold text-slate-900">
               Top Churn Risk Drivers
             </h3>
-            <span className="text-xs font-mono text-slate-400">Tree Gain</span>
+            <span className="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-bold">Tree Gain</span>
           </div>
 
           <div className="space-y-4">
             {topFeatures.length > 0 ? (
-              topFeatures.slice(0, 6).map((feat: any, idx: number) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-slate-800">{feat.label}</span>
-                    <span className="text-indigo-600 font-mono">{feat.importance_pct}%</span>
+              topFeatures.slice(0, 6).map((feat: any, idx: number) => {
+                const gradients = [
+                  'from-indigo-600 to-blue-500',
+                  'from-blue-600 to-cyan-500',
+                  'from-cyan-600 to-teal-500',
+                  'from-purple-600 to-pink-500',
+                  'from-amber-500 to-orange-500',
+                  'from-rose-500 to-red-500'
+                ]
+                const grad = gradients[idx % gradients.length]
+
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-800">{feat.label}</span>
+                      <span className="text-indigo-600 font-mono font-bold">{feat.importance_pct}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className={`bg-gradient-to-r ${grad} h-full rounded-full`}
+                        style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-mono">Token: {feat.raw_name}</p>
                   </div>
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-indigo-500 to-blue-600 h-full rounded-full"
-                      style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-mono">Token: {feat.raw_name}</p>
-                </div>
-              ))
+                )
+              })
             ) : (
               <div className="text-center py-6 text-xs text-slate-400">Loading model features...</div>
             )}
           </div>
 
           {modelInfo && (
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 flex justify-between">
-              <span>Pipeline Features: <strong className="text-slate-900">{modelInfo.num_features}</strong></span>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex justify-between">
+              <span>Pipeline Features: <strong className="text-indigo-700">{modelInfo.num_features}</strong></span>
               <span>Model Core: <strong className="text-slate-900">{modelInfo.model_name}</strong></span>
             </div>
           )}
@@ -400,7 +427,7 @@ export const ModelPerformance: React.FC = () => {
                 : 'Evaluation benchmarks evaluated on holdout test partition'}
             </p>
           </div>
-          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
             Holdout Set
           </span>
         </div>
@@ -423,7 +450,7 @@ export const ModelPerformance: React.FC = () => {
                   <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 text-sm">{row.value}</td>
                   <td className="py-3.5 px-4 font-mono text-slate-600">{row.benchmark}</td>
                   <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.statusColor}`}>
                       {row.status}
                     </span>
                   </td>

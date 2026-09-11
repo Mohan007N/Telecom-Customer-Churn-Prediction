@@ -13,7 +13,11 @@ import {
   ShieldCheck,
   DollarSign,
   Layers,
-  HelpCircle
+  HelpCircle,
+  CreditCard,
+  Wifi,
+  Clock,
+  UserX
 } from 'lucide-react'
 import { churnAPI } from '../services/api'
 import { addPredictionRecord } from '../utils/predictionStorage'
@@ -186,16 +190,17 @@ export const SinglePrediction: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-12 font-sans selection:bg-indigo-500/20 selection:text-indigo-950">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200/80">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200 shadow-2xs">
               Single Account Audit
             </span>
             <span className="text-xs text-slate-400">•</span>
-            <span className="text-xs font-medium text-slate-500">
+            <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-indigo-500" />
               In-Memory XGBoost Inference
             </span>
           </div>
@@ -208,23 +213,24 @@ export const SinglePrediction: React.FC = () => {
           </p>
         </div>
 
-        <div className="text-xs text-slate-500 font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
-          Engine: <strong className="text-slate-900 font-bold">XGBoost v1.0</strong>
+        <div className="text-xs text-slate-600 font-mono bg-white/90 px-3.5 py-2 rounded-xl border border-indigo-100 shadow-xs flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+          <span>Engine: <strong className="text-indigo-900 font-bold">XGBoost Classifier</strong></span>
         </div>
       </div>
 
       {/* Preset Benchmark Accounts Quick Selector from Dataset */}
       {samplePresets.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700 flex items-center gap-1.5">
+            <span className="font-bold text-slate-800 flex items-center gap-1.5">
               <BookmarkPlus className="w-4 h-4 text-indigo-600" />
               <span>Load Real Benchmark Account from Dataset:</span>
             </span>
-            <span className="text-slate-400 font-mono text-[11px]">Click preset to prefill form</span>
+            <span className="text-indigo-600 font-mono text-[11px] bg-indigo-50 px-2 py-0.5 rounded">Click preset to auto-fill</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {samplePresets.map((preset: any) => {
               const isSelected = selectedPresetId === preset.id
               return (
@@ -232,10 +238,10 @@ export const SinglePrediction: React.FC = () => {
                   key={preset.id}
                   type="button"
                   onClick={() => handleApplyPreset(preset)}
-                  className={`card-enterprise p-3.5 text-left transition-all cursor-pointer ${
+                  className={`card-enterprise p-3.5 text-left transition-all cursor-pointer relative overflow-hidden ${
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-600'
-                      : 'bg-white hover:border-slate-300'
+                      ? 'border-indigo-500 bg-gradient-to-br from-indigo-50/90 to-blue-50/50 ring-2 ring-indigo-500/30 shadow-md'
+                      : 'bg-white hover:border-indigo-200 hover:bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -260,13 +266,18 @@ export const SinglePrediction: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Form Container */}
-        <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Account & Contract Parameters
-              </h2>
-              <span className="text-[11px] font-mono text-slate-400">Features: 20 Raw Fields</span>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
+                  1
+                </div>
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Account & Contract Parameters
+                </h2>
+              </div>
+              <span className="text-[11px] font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded font-semibold">20 Telco Attributes</span>
             </div>
 
             {/* Row 1: Account Core */}
@@ -394,21 +405,21 @@ export const SinglePrediction: React.FC = () => {
 
             {/* Submit */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs text-slate-400">Pipeline processes 30 feature scalers</span>
+              <span className="text-xs text-slate-400">Model aligns with 30-feature encoder</span>
               
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:opacity-50 shadow-xs text-xs py-2 px-4 cursor-pointer"
+                className="btn-primary disabled:opacity-50 text-xs py-2.5 px-5 cursor-pointer shadow-md"
               >
                 {loading ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Executing XGBoost Inference...</span>
+                    <span>Executing Inference...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4" />
+                    <Zap className="w-4 h-4 text-amber-300" />
                     <span>Predict Account Risk</span>
                   </>
                 )}
@@ -419,12 +430,18 @@ export const SinglePrediction: React.FC = () => {
 
         {/* Prediction Results & Retention Actions Display */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6 relative overflow-hidden">
+            {result && (
+              <div className={`absolute top-0 left-0 right-0 h-1.5 ${
+                result.churn_predicted === 1 ? 'card-accent-rose' : 'card-accent-emerald'
+              }`}></div>
+            )}
+
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Inference Result Telemetry
               </h2>
-              <span className="text-[11px] font-mono text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="text-[11px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                 Latency: &lt;4ms
               </span>
             </div>
@@ -439,10 +456,10 @@ export const SinglePrediction: React.FC = () => {
             {result ? (
               <div className="space-y-6 animate-fadeIn">
                 {/* Status Badge */}
-                <div className={`p-5 rounded-xl text-center border ${
+                <div className={`p-5 rounded-2xl text-center border shadow-xs ${
                   result.churn_predicted === 1
-                    ? 'bg-rose-50 border-rose-200 text-rose-900'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    ? 'bg-gradient-to-b from-rose-50 to-rose-100/60 border-rose-200 text-rose-900'
+                    : 'bg-gradient-to-b from-emerald-50 to-emerald-100/60 border-emerald-200 text-emerald-900'
                 }`}>
                   <div className="text-[11px] font-bold uppercase tracking-wider mb-1 font-mono">
                     Model Classification
@@ -450,25 +467,25 @@ export const SinglePrediction: React.FC = () => {
                   <div className="text-2xl font-black">
                     {result.churn_predicted === 1 ? 'CHURN RISK DETECTED 🔴' : 'CUSTOMER RETAINED 🟢'}
                   </div>
-                  <div className="text-xs font-medium mt-1">
+                  <div className="text-xs font-medium mt-1 text-slate-600">
                     {result.churn_predicted === 1 ? 'High likelihood of customer cancelling service' : 'Customer predicted to remain active with company'}
                   </div>
                 </div>
 
                 {/* Probability Meter */}
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <div className="flex justify-between items-center text-xs font-semibold text-slate-600">
+                <div className="p-4.5 bg-gradient-to-br from-slate-50 to-indigo-50/20 border border-slate-200/90 rounded-2xl space-y-2.5 shadow-2xs">
+                  <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
                     <span>Predicted Churn Likelihood</span>
-                    <span className="text-base font-bold text-slate-900 font-mono">{result.churn_probability_pct}</span>
+                    <span className="text-lg font-extrabold text-slate-900 font-mono">{result.churn_probability_pct}</span>
                   </div>
-                  <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden p-0.5">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         result.risk_code === 'HIGH' || result.risk_level === 'High Risk'
-                          ? 'bg-rose-500'
+                          ? 'bg-gradient-to-r from-rose-500 to-red-600 shadow-xs'
                           : result.risk_code === 'MEDIUM' || result.risk_level === 'Medium Risk'
-                          ? 'bg-amber-500'
-                          : 'bg-emerald-500'
+                          ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-xs'
+                          : 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-xs'
                       }`}
                       style={{ width: `${result.churn_probability * 100}%` }}
                     ></div>
@@ -479,7 +496,13 @@ export const SinglePrediction: React.FC = () => {
                 <div className="space-y-2.5 text-xs border-t border-slate-100 pt-4">
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500 font-medium">Risk Category Tier:</span>
-                    <span className="font-bold text-slate-900">{result.risk_level}</span>
+                    <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                      result.risk_level === 'High Risk'
+                        ? 'bg-rose-100 text-rose-800'
+                        : result.risk_level === 'Medium Risk'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}>{result.risk_level}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-500 font-medium">Calibrated Decision Cutoff:</span>
@@ -487,7 +510,7 @@ export const SinglePrediction: React.FC = () => {
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-500 font-medium">Account Identifier:</span>
-                    <span className="font-mono font-bold text-indigo-600">{result.customer_id}</span>
+                    <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{result.customer_id}</span>
                   </div>
                 </div>
 
@@ -495,7 +518,7 @@ export const SinglePrediction: React.FC = () => {
                 {result.churn_predicted === 1 && (
                   <div className="pt-2 space-y-3">
                     <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
                       <span>Recommended Retention Interventions:</span>
                     </div>
 
@@ -503,12 +526,14 @@ export const SinglePrediction: React.FC = () => {
                       {getRetentionRecommendations().map((rec, idx) => {
                         const Icon = rec.icon
                         return (
-                          <div key={idx} className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-lg text-xs space-y-1">
-                            <div className="font-semibold text-slate-900 flex items-start gap-1.5">
-                              <Icon className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
+                          <div key={idx} className="p-3.5 bg-gradient-to-r from-indigo-50/80 to-blue-50/40 border border-indigo-100/90 rounded-xl text-xs space-y-1 shadow-2xs">
+                            <div className="font-semibold text-slate-900 flex items-start gap-2">
+                              <div className="w-5 h-5 rounded-md bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                <Icon className="w-3 h-3 text-white" />
+                              </div>
                               <span>{rec.action}</span>
                             </div>
-                            <div className="text-[11px] font-mono font-bold text-indigo-700 pl-5">
+                            <div className="text-[11px] font-mono font-bold text-indigo-700 pl-7">
                               {rec.impact}
                             </div>
                           </div>
@@ -521,11 +546,11 @@ export const SinglePrediction: React.FC = () => {
               </div>
             ) : (
               <div className="py-14 text-center text-slate-400 space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                  <UserCheck className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-50 to-blue-50 text-indigo-500 border border-indigo-100 flex items-center justify-center mx-auto shadow-xs">
+                  <UserCheck className="w-7 h-7 text-indigo-600" />
                 </div>
                 <p className="text-xs font-medium max-w-xs mx-auto text-slate-500">
-                  Select a sample profile above or adjust attributes and click <strong>Predict Account Risk</strong>.
+                  Select a sample profile above or adjust attributes and click <strong className="text-indigo-600">Predict Account Risk</strong>.
                 </p>
               </div>
             )}
