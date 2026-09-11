@@ -15,10 +15,13 @@ import pandas as pd
 from loguru import logger
 from app.core.model_loader import get_predictor
 
+from app.core.config import settings
+
 _analytics_cache: Dict[str, Any] = {}
 
 def _find_dataset_path() -> Path:
     candidates = [
+        Path(settings.RAW_DATA_PATH),
         Path("WA_Fn-UseC_-Telco-Customer-Churn.csv"),
         Path("..") / "WA_Fn-UseC_-Telco-Customer-Churn.csv",
         Path(__file__).resolve().parent.parent.parent.parent / "WA_Fn-UseC_-Telco-Customer-Churn.csv",
@@ -146,7 +149,6 @@ def get_dataset_analytics() -> Dict[str, Any]:
                 key=lambda x: x[1],
                 reverse=True
             )
-            # Friendly readable labels for top features
             label_map = {
                 "HasContract": "Month-to-Month Contract Status",
                 "CostPerService": "Cost Ratio Per Service Subscribed",
@@ -158,30 +160,33 @@ def get_dataset_analytics() -> Dict[str, Any]:
                 "InternetService_No": "No Internet Service (Low Churn)",
                 "ChargesRatio": "Monthly / Lifetime Bill Ratio",
                 "tenure": "Total Active Tenure (Months)",
+                "TotalCharges": "Cumulative Lifetime Billing ($)",
+                "MonthlyCharges": "Monthly Subscription Fee ($)",
+                "OnlineSecurity_No": "Absence of Online Security Package",
+                "TechSupport_No": "Absence of Dedicated Tech Support",
+                "PaperlessBilling_Yes": "Paperless Billing Preference",
             }
-            for f_name, f_weight in feat_pairs[:8]:
+            for f_name, f_weight in feat_pairs[:10]:
                 feature_importances.append({
                     "raw_name": f_name,
-                    "label": label_map.get(f_name, f_name),
+                    "label": label_map.get(f_name, f_name.replace("_", " ")),
                     "importance_pct": f_weight,
                 })
     except Exception as e:
         logger.warning(f"Could not load feature importances from model: {e}")
-        feature_importances = [
-            {"raw_name": "HasContract", "label": "Month-to-Month Contract Status", "importance_pct": 39.70},
-            {"raw_name": "CostPerService", "label": "Cost Ratio Per Service Subscribed", "importance_pct": 6.24},
-            {"raw_name": "InternetService_Fiber optic", "label": "High-Speed Fiber Optic Internet", "importance_pct": 6.04},
-            {"raw_name": "Contract_Two year", "label": "Long-Term 2-Year Contract Security", "importance_pct": 5.35},
-            {"raw_name": "TenureCohort_4+ Years", "label": "Brand Loyalty (4+ Years Tenure)", "importance_pct": 4.06},
-            {"raw_name": "PaymentMethod_Electronic check", "label": "Manual Electronic Check Method", "importance_pct": 3.44},
-            {"raw_name": "Contract_One year", "label": "Medium-Term 1-Year Contract", "importance_pct": 2.92},
-            {"raw_name": "InternetService_No", "label": "No Internet Service (Low Churn)", "importance_pct": 2.88},
-        ]
 
     # 6. Real Sample Customer Telemetry Scored with XGBoost
-    # Select 12 representative customers from the dataset
-    sample_indices = [0, 1, 2, 4, 5, 8, 12, 13, 14, 15, 17, 18]
-    sample_df = df.iloc[sample_indices].copy()
+    # Dynamically select representative cohort records across contracts and churn status
+    sample_dfs = []
+    for contract in ["Month-to-month", "One year", "Two year"]:
+        for churn_val in ["Yes", "No"]:
+            match = df[(df["Contract"] == contract) & (df["Churn"] == churn_val)]
+            if len(match) > 0:
+                sample_dfs.append(match.head(2))
+    if sample_dfs:
+        sample_df = pd.concat(sample_dfs).drop_duplicates().head(12).copy()
+    else:
+        sample_df = df.head(12).copy()
     
     scored_samples = []
     try:

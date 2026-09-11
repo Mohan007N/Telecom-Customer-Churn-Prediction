@@ -1,7 +1,19 @@
 /// <reference types="vite/client" />
 import axios from 'axios'
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1'
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1'
+
+export const getBackendBaseUrl = (): string => {
+  return API_BASE_URL.replace(/\/api\/v1\/?$/, '')
+}
+
+export const getDownloadUrl = (path: string): string => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const base = getBackendBaseUrl()
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${cleanPath}`
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

@@ -6,6 +6,12 @@ Churn Predictor — Production FastAPI Application Entrypoint
 
 import os
 import sys
+
+# Ensure backend root is on sys.path for direct or module execution
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -14,6 +20,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.model_loader import init_predictor
+from app.core.security import SecurityHeadersMiddleware, RateLimiterMiddleware
 from app.api import endpoints
 
 # Configure Loguru logging
@@ -52,10 +59,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Security & Rate Limiting Middleware
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimiterMiddleware)
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -83,7 +94,8 @@ async def root():
             "/predict-batch",
             "/health",
             "/metrics",
-            "/model-info"
+            "/model-info",
+            "/analytics"
         ]
     }
 
@@ -95,7 +107,7 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG
     )

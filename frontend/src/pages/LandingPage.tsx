@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   UserCheck,
@@ -26,90 +26,17 @@ import {
   Filter,
   PieChart,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw
 } from 'lucide-react'
 import { Navbar } from '../components/Navbar'
-
-// Benchmark Accounts for Interactive Live Sandbox
-const BENCHMARK_ACCOUNTS = [
-  {
-    id: 'DEMO-891',
-    label: 'High Hazard Account',
-    type: 'Month-to-Month • Fiber Optic • Electronic Check',
-    tenure: 2,
-    monthly: 99.65,
-    contract: 'Month-to-month',
-    internet: 'Fiber optic',
-    probability: 87.4,
-    risk: 'High Risk',
-    status: 'Immediate Action Needed',
-    factors: ['Month-to-Month Contract', 'Short 2-Month Tenure', 'No Tech Support Service']
-  },
-  {
-    id: 'DEMO-442',
-    label: 'Moderate Renewal Account',
-    type: '1-Year Contract • DSL Internet • Bank Transfer',
-    tenure: 16,
-    monthly: 62.40,
-    contract: 'One year',
-    internet: 'DSL',
-    probability: 41.8,
-    risk: 'Medium Risk',
-    status: 'Contract Renewal Window',
-    factors: ['1-Year Contract Maturing', 'DSL Service Tier', 'Moderate Monthly Spend']
-  },
-  {
-    id: 'DEMO-109',
-    label: 'Loyal Enterprise Account',
-    type: '2-Year Contract • Fiber + Support • Auto-Pay',
-    tenure: 54,
-    monthly: 45.10,
-    contract: 'Two year',
-    internet: 'DSL',
-    probability: 7.6,
-    risk: 'Low Risk',
-    status: 'Stable Retained Base',
-    factors: ['2-Year Long-Term Commitment', '54-Month High Tenure', 'Automatic Credit Card Payment']
-  }
-]
-
-// Real-world Telecom Feature Drivers (Empirical SHAP / Feature Importance)
-const TELECOM_FEATURE_DRIVERS = [
-  {
-    title: 'Contract Commitment',
-    hazard: 'Month-to-Month (42.7% Churn)',
-    safe: '2-Year Contract (2.8% Churn)',
-    impact: '4.2x Risk Multiplier',
-    description: 'Contract flexibility is the strongest empirical predictor. Switching customers to multi-year contracts reduces attrition hazard by over 80%.'
-  },
-  {
-    title: 'Tenure Longevity',
-    hazard: 'First 6 Months (46.8% Attrition)',
-    safe: '24+ Months (<11% Attrition)',
-    impact: 'Crucial Onboarding Window',
-    description: 'The first 180 days are critical. Onboarding check-ins and proactive support during months 1-3 drastically increase lifetime retention.'
-  },
-  {
-    title: 'Internet Service & Tech Support',
-    hazard: 'Fiber without Tech Support (38.2%)',
-    safe: 'Fiber with Tech Support (14.1%)',
-    impact: '2.7x Risk Multiplier',
-    description: 'High-speed fiber customers without active technical support experience unaddressed friction and defect rapidly to competitors.'
-  },
-  {
-    title: 'Payment Channel Friction',
-    hazard: 'Electronic Check (45.3% Churn)',
-    safe: 'Auto Credit Card (15.2% Churn)',
-    impact: 'Manual Friction Hazard',
-    description: 'Paperless electronic checks require manual monthly approvals, leading to bill-shock awareness compared to automated payment methods.'
-  }
-]
+import { churnAPI } from '../services/api'
 
 // Enterprise FAQ Items
 const FAQ_ITEMS = [
   {
-    question: 'How is the classification decision threshold τ = 0.61 selected?',
-    answer: 'The default 0.50 cutoff in standard binary classification misses subtle early-warning churn signals. In our model calibration, a decision boundary of τ = 0.61 maximizes Early Catch Recall (70.59%) while preserving a 78.50% overall test accuracy across the 7,043 customer test cohort.'
+    question: 'How is the classification decision threshold τ selected?',
+    answer: 'The default 0.50 cutoff in standard binary classification can miss subtle early-warning churn signals. In our model calibration, the decision boundary is tuned to maximize Early Catch Recall while preserving strong overall accuracy across holdout test cohorts.'
   },
   {
     question: 'What format is required for Batch CSV scoring?',
@@ -121,31 +48,154 @@ const FAQ_ITEMS = [
   },
   {
     question: 'Can this platform integrate with existing enterprise CRM and billing pipelines?',
-    answer: 'Yes. The underlying FastAPI backend exposes RESTful JSON endpoints (/predict and /batch-predict) with OpenAPI specifications. It processes queries in sub-4ms and can be embedded directly into Salesforce, HubSpot, or custom billing systems.'
+    answer: 'Yes. The underlying FastAPI backend exposes RESTful JSON endpoints (/predict and /predict-batch) with OpenAPI specifications. It processes queries in sub-4ms and can be embedded directly into CRM or billing systems.'
   }
 ]
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate()
-  const [selectedDemoIdx, setSelectedDemoIdx] = useState<number>(0)
-  const [interactiveTenure, setInteractiveTenure] = useState<number>(BENCHMARK_ACCOUNTS[0].tenure)
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [metrics, setMetrics] = useState<any>(null)
+  const [latencyMs, setLatencyMs] = useState<number | null>(null)
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(null)
-  const currentDemo = BENCHMARK_ACCOUNTS[selectedDemoIdx]
 
-  // Dynamic probability calculation based on interactive tenure adjustment
-  const computedProbability = Math.max(
-    5,
-    Math.min(
-      95,
-      Math.round(
-        currentDemo.probability - (interactiveTenure - currentDemo.tenure) * 1.2
-      )
-    )
-  )
+  // Interactive Live Sandbox State
+  const [selectedDemoIdx, setSelectedDemoIdx] = useState<number>(0)
+  const [interactiveTenure, setInteractiveTenure] = useState<number>(2)
+  const [livePrediction, setLivePrediction] = useState<any>(null)
+  const [scoringLoading, setScoringLoading] = useState<boolean>(false)
 
-  const handleDemoSelect = (idx: number) => {
+  // Fetch real data on mount
+  useEffect(() => {
+    const startTime = performance.now()
+    churnAPI.getHealth()
+      .then(() => {
+        const endTime = performance.now()
+        setLatencyMs(Math.max(1, Math.round(endTime - startTime)))
+      })
+      .catch(() => setLatencyMs(null))
+
+    churnAPI.getMetrics()
+      .then((res) => setMetrics(res.data))
+      .catch(() => {})
+
+    churnAPI.getAnalytics()
+      .then((res) => {
+        setAnalytics(res.data)
+        if (res.data?.sample_customers?.length > 0) {
+          const highRisk = res.data.sample_customers.find((c: any) => c.risk_level === 'High Risk') || res.data.sample_customers[0]
+          setInteractiveTenure(highRisk.tenure || 2)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Extract 3 representative archetypes from real dataset sample customers
+  const sampleArchetypes = React.useMemo(() => {
+    if (!analytics?.sample_customers || analytics.sample_customers.length === 0) {
+      return []
+    }
+    const samples = analytics.sample_customers
+    const highRisk = samples.find((c: any) => c.risk_level === 'High Risk') || samples[0]
+    const medRisk = samples.find((c: any) => c.risk_level === 'Medium Risk') || samples[1] || samples[0]
+    const lowRisk = samples.find((c: any) => c.risk_level === 'Low Risk') || samples[2] || samples[0]
+
+    return [
+      {
+        typeKey: 'HIGH_RISK',
+        tabLabel: 'High Risk Archetype',
+        badge: 'High Risk Tier',
+        badgeColor: 'rose',
+        customer: highRisk,
+        subtitle: `${highRisk.Contract} • ${highRisk.InternetService} Internet • $${Number(highRisk.MonthlyCharges).toFixed(2)}/mo`,
+        factors: [
+          highRisk.Contract === 'Month-to-month' ? 'Month-to-Month Contract' : highRisk.Contract,
+          highRisk.OnlineSecurity === 'No' ? 'No Online Security Package' : 'Online Security Active',
+          highRisk.PaymentMethod.includes('Electronic check') ? 'Manual Electronic Check' : highRisk.PaymentMethod
+        ]
+      },
+      {
+        typeKey: 'MED_RISK',
+        tabLabel: 'Moderate Archetype',
+        badge: 'Medium Risk Tier',
+        badgeColor: 'amber',
+        customer: medRisk,
+        subtitle: `${medRisk.Contract} • ${medRisk.InternetService} Internet • $${Number(medRisk.MonthlyCharges).toFixed(2)}/mo`,
+        factors: [
+          medRisk.Contract,
+          `${medRisk.tenure} Months Active Tenure`,
+          medRisk.PaymentMethod
+        ]
+      },
+      {
+        typeKey: 'LOW_RISK',
+        tabLabel: 'Retained Archetype',
+        badge: 'Low Risk Tier',
+        badgeColor: 'emerald',
+        customer: lowRisk,
+        subtitle: `${lowRisk.Contract} • ${lowRisk.InternetService} Internet • $${Number(lowRisk.MonthlyCharges).toFixed(2)}/mo`,
+        factors: [
+          `${lowRisk.Contract} Commitment`,
+          `${lowRisk.tenure} Months Long Tenure`,
+          lowRisk.PaymentMethod
+        ]
+      }
+    ]
+  }, [analytics])
+
+  const currentArchetype = sampleArchetypes[selectedDemoIdx] || null
+
+  // Trigger live ML inference when archetype or tenure slider changes
+  useEffect(() => {
+    if (!currentArchetype?.customer) return
+
+    const cust = currentArchetype.customer
+    const updatedPayload = {
+      customerID: cust.customerID,
+      gender: cust.gender || 'Male',
+      SeniorCitizen: cust.SeniorCitizen || 0,
+      Partner: cust.Partner || 'No',
+      Dependents: cust.Dependents || 'No',
+      tenure: interactiveTenure,
+      PhoneService: cust.PhoneService || 'Yes',
+      MultipleLines: cust.MultipleLines || 'No',
+      InternetService: cust.InternetService || 'DSL',
+      OnlineSecurity: cust.OnlineSecurity || 'No',
+      OnlineBackup: cust.OnlineBackup || 'No',
+      DeviceProtection: cust.DeviceProtection || 'No',
+      TechSupport: cust.TechSupport || 'No',
+      StreamingTV: cust.StreamingTV || 'No',
+      StreamingMovies: cust.StreamingMovies || 'No',
+      Contract: cust.Contract || 'Month-to-month',
+      PaperlessBilling: cust.PaperlessBilling || 'Yes',
+      PaymentMethod: cust.PaymentMethod || 'Electronic check',
+      MonthlyCharges: Number(cust.MonthlyCharges) || 50,
+      TotalCharges: +(Number(cust.MonthlyCharges) * interactiveTenure).toFixed(2)
+    }
+
+    setScoringLoading(true)
+    const timeout = setTimeout(() => {
+      churnAPI.predictSingle(updatedPayload)
+        .then((res) => {
+          setLivePrediction(res.data)
+        })
+        .catch(() => {
+          setLivePrediction(null)
+        })
+        .finally(() => {
+          setScoringLoading(false)
+        })
+    }, 120)
+
+    return () => clearTimeout(timeout)
+  }, [selectedDemoIdx, interactiveTenure, currentArchetype])
+
+  const handleArchetypeSelect = (idx: number) => {
     setSelectedDemoIdx(idx)
-    setInteractiveTenure(BENCHMARK_ACCOUNTS[idx].tenure)
+    const targetCust = sampleArchetypes[idx]?.customer
+    if (targetCust) {
+      setInteractiveTenure(targetCust.tenure || 12)
+    }
   }
 
   const toggleFaq = (idx: number) => {
@@ -153,31 +203,58 @@ export const LandingPage: React.FC = () => {
   }
 
   const handleLaunchSimulation = () => {
+    if (!currentArchetype?.customer) {
+      navigate('/dashboard/single')
+      return
+    }
+    const cust = currentArchetype.customer
     const prefillData = {
-      customerID: currentDemo.id,
-      Contract: currentDemo.contract,
-      InternetService: currentDemo.internet,
+      customerID: cust.customerID,
+      Contract: cust.Contract,
+      InternetService: cust.InternetService,
       tenure: interactiveTenure,
-      MonthlyCharges: currentDemo.monthly,
-      TotalCharges: +(currentDemo.monthly * interactiveTenure).toFixed(2),
-      gender: 'Male',
-      SeniorCitizen: 0,
-      Partner: 'No',
-      Dependents: 'No',
-      PhoneService: 'Yes',
-      MultipleLines: 'No',
-      OnlineSecurity: 'No',
-      OnlineBackup: 'No',
-      DeviceProtection: 'No',
-      TechSupport: 'No',
-      StreamingTV: 'No',
-      StreamingMovies: 'No',
-      PaperlessBilling: 'Yes',
-      PaymentMethod: 'Electronic check'
+      MonthlyCharges: Number(cust.MonthlyCharges),
+      TotalCharges: +(Number(cust.MonthlyCharges) * interactiveTenure).toFixed(2),
+      gender: cust.gender,
+      SeniorCitizen: cust.SeniorCitizen,
+      Partner: cust.Partner,
+      Dependents: cust.Dependents,
+      PhoneService: cust.PhoneService,
+      MultipleLines: cust.MultipleLines,
+      OnlineSecurity: cust.OnlineSecurity,
+      OnlineBackup: cust.OnlineBackup,
+      DeviceProtection: cust.DeviceProtection,
+      TechSupport: cust.TechSupport,
+      StreamingTV: cust.StreamingTV,
+      StreamingMovies: cust.StreamingMovies,
+      PaperlessBilling: cust.PaperlessBilling,
+      PaymentMethod: cust.PaymentMethod
     }
     sessionStorage.setItem('prefill_customer', JSON.stringify(prefillData))
     navigate('/dashboard/single')
   }
+
+  const displayedProb = livePrediction
+    ? Math.round(livePrediction.churn_probability * 100)
+    : currentArchetype?.customer
+    ? Math.round((currentArchetype.customer.churn_probability || 0.5) * 100)
+    : 50
+
+  const displayedRisk = livePrediction
+    ? livePrediction.risk_level
+    : currentArchetype?.customer
+    ? currentArchetype.customer.risk_level
+    : 'Medium Risk'
+
+  const overview = analytics?.overview
+  const totalRevenue = overview ? `$${(overview.total_monthly_revenue / 1000).toFixed(1)}k` : '$456.1k'
+  const grossLoss = overview ? `$${(overview.monthly_churn_loss / 1000).toFixed(1)}k` : '$139.1k'
+  const preservedCatch = overview && metrics
+    ? `$${((overview.monthly_churn_loss * metrics.recall) / 1000).toFixed(1)}k`
+    : '$98.2k'
+
+  // Dynamic feature drivers from model
+  const featureDrivers = analytics?.feature_importances?.slice(0, 4) || []
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-slate-200 selection:text-slate-900">
@@ -195,7 +272,7 @@ export const LandingPage: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 <span>Production-Ready MLOps Platform</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-slate-600 font-mono">IBM Telco Cohort (7,043 Records)</span>
+                <span className="text-slate-600 font-mono">IBM Telco Cohort ({overview?.total_customers?.toLocaleString() || '7,043'} Records)</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.18]">
@@ -237,19 +314,27 @@ export const LandingPage: React.FC = () => {
               {/* Performance Metrics Strip */}
               <div className="pt-6 grid grid-cols-4 gap-4 border-t border-slate-200">
                 <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">78.50%</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+                    {metrics ? `${(metrics.test_accuracy * 100).toFixed(1)}%` : '--'}
+                  </div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">Test Accuracy</div>
                 </div>
                 <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">70.59%</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+                    {metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '--'}
+                  </div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">Early Catch Recall</div>
                 </div>
                 <div>
-                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">0.8446</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 font-mono-nums">
+                    {metrics ? metrics.roc_auc.toFixed(4) : '--'}
+                  </div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">ROC-AUC Score</div>
                 </div>
                 <div>
-                  <div className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono-nums">&lt;4ms</div>
+                  <div className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono-nums">
+                    {latencyMs !== null ? `${latencyMs}ms` : '--'}
+                  </div>
                   <div className="text-xs text-slate-500 font-medium mt-0.5">Inference Latency</div>
                 </div>
               </div>
@@ -269,94 +354,111 @@ export const LandingPage: React.FC = () => {
                     </span>
                   </div>
                   <span className="text-xs font-mono font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                    Live Telemetry
+                    Live XGBoost Inference
                   </span>
                 </div>
 
                 {/* Account Presets */}
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg">
-                  {BENCHMARK_ACCOUNTS.map((account, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleDemoSelect(idx)}
-                      className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-all text-center cursor-pointer ${
-                        selectedDemoIdx === idx
-                          ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                      }`}
-                    >
-                      {idx === 0 ? 'High Risk' : idx === 1 ? 'Moderate' : 'Retained'}
-                    </button>
-                  ))}
+                  {sampleArchetypes.length > 0 ? (
+                    sampleArchetypes.map((archetype, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleArchetypeSelect(idx)}
+                        className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-all text-center cursor-pointer ${
+                          selectedDemoIdx === idx
+                            ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        }`}
+                      >
+                        {idx === 0 ? 'High Risk' : idx === 1 ? 'Moderate' : 'Retained'}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="col-span-3 text-center py-1 text-xs text-slate-400">Loading dataset archetypes...</div>
+                  )}
                 </div>
 
                 {/* Selected Account Telemetry Box */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-slate-900">{currentDemo.label}</div>
-                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">{currentDemo.type}</div>
+                {currentArchetype ? (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 font-mono">
+                          Account: {currentArchetype.customer.customerID}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          {currentArchetype.subtitle}
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase font-mono ${
+                        displayedRisk === 'High Risk'
+                          ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                          : displayedRisk === 'Medium Risk'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}>
+                        {displayedRisk}
+                      </span>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase font-mono ${
-                      computedProbability >= 60 ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                      computedProbability >= 35 ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                      'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    }`}>
-                      {computedProbability >= 60 ? 'High Risk' : computedProbability >= 35 ? 'Moderate' : 'Low Risk'}
-                    </span>
-                  </div>
 
-                  {/* Probability Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-600">Calculated Churn Probability:</span>
-                      <span className="font-mono text-slate-900 font-bold">{computedProbability}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          computedProbability >= 60 ? 'bg-rose-500' :
-                          computedProbability >= 35 ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${computedProbability}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Key Factors for Account */}
-                  <div className="pt-2 border-t border-slate-200/80 space-y-1">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                      Observed Risk Drivers
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {currentDemo.factors.map((factor, fIdx) => (
-                        <span key={fIdx} className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 font-medium">
-                          {factor}
+                    {/* Probability Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-slate-600 flex items-center gap-1.5">
+                          <span>Live Model Probability:</span>
+                          {scoringLoading && <RefreshCw className="w-3 h-3 text-indigo-500 animate-spin" />}
                         </span>
-                      ))}
+                        <span className="font-mono text-slate-900 font-bold">{displayedProb}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            displayedProb >= 60 ? 'bg-rose-500' :
+                            displayedProb >= 35 ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${displayedProb}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Tenure Adjustment Slider */}
-                  <div className="pt-2 border-t border-slate-200 space-y-1.5">
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-500 font-medium">Adjust Tenure Simulation:</span>
-                      <span className="font-mono font-bold text-slate-800">{interactiveTenure} Months</span>
+                    {/* Key Factors for Account */}
+                    <div className="pt-2 border-t border-slate-200/80 space-y-1">
+                      <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Observed Account Drivers
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {currentArchetype.factors.map((factor: string, fIdx: number) => (
+                          <span key={fIdx} className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 font-medium">
+                            {factor}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="72"
-                      value={interactiveTenure}
-                      onChange={(e) => setInteractiveTenure(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                      <span>1 mo (New Signup)</span>
-                      <span>72 mos (Loyal Base)</span>
+
+                    {/* Tenure Adjustment Slider */}
+                    <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-500 font-medium">Adjust Tenure Simulation:</span>
+                        <span className="font-mono font-bold text-slate-800">{interactiveTenure} Months</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="72"
+                        value={interactiveTenure}
+                        onChange={(e) => setInteractiveTenure(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>1 mo (New Signup)</span>
+                        <span>72 mos (Loyal Base)</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-8 text-center text-xs text-slate-400">Loading live telemetry...</div>
+                )}
 
                 {/* Simulate Button */}
                 <button
@@ -469,7 +571,7 @@ export const LandingPage: React.FC = () => {
                 <div className="pt-1 space-y-1 text-[11px] text-slate-500">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Interactive Recharts charts</span>
+                    <span>Interactive Recharts visual charts</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -522,46 +624,46 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 3. Empirical Risk Drivers (SHAP / Feature Attribution) ───── */}
+      {/* ── 3. Empirical Risk Drivers (Model Feature Importances) ───── */}
       <section className="py-14 md:py-18 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Empirical Insights</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Model Decision Drivers</h2>
             <p className="text-2xl sm:text-3xl font-bold text-slate-900">
-              Primary Churn Catalysts in Telecom
+              Primary Churn Catalysts in XGBoost Model
             </p>
             <p className="text-xs sm:text-sm text-slate-600">
-              Analysis of key feature importances derived from Gradient Boosted tree node splits on the 7,043 customer cohort.
+              Tree-gain importance weights computed directly from serialized model node splits.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {TELECOM_FEATURE_DRIVERS.map((driver, idx) => (
-              <div key={idx} className="card-enterprise p-5 bg-white border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-900">{driver.title}</span>
-                  <span className="text-[11px] font-mono font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded border border-rose-200">
-                    {driver.impact}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded bg-rose-50/60 border border-rose-100 space-y-0.5">
-                    <div className="text-[10px] font-semibold text-rose-800 uppercase">High Hazard Segment</div>
-                    <div className="font-bold text-slate-900 text-xs">{driver.hazard}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {featureDrivers.length > 0 ? (
+              featureDrivers.map((feat: any, idx: number) => (
+                <div key={idx} className="card-enterprise p-5 bg-white border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900">{feat.label}</span>
+                    <span className="text-[11px] font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-200">
+                      {feat.importance_pct}% Weight
+                    </span>
                   </div>
-                  <div className="p-2.5 rounded bg-emerald-50/60 border border-emerald-100 space-y-0.5">
-                    <div className="text-[10px] font-semibold text-emerald-800 uppercase">Retained Segment</div>
-                    <div className="font-bold text-slate-900 text-xs">{driver.safe}</div>
+
+                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-slate-900 h-full rounded-full"
+                      style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 font-mono">
+                    Feature Token: {feat.raw_name}
                   </div>
                 </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed pt-1">
-                  {driver.description}
-                </p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="col-span-4 text-center py-6 text-xs text-slate-400">Loading model feature drivers...</div>
+            )}
           </div>
 
         </div>
@@ -583,7 +685,7 @@ export const LandingPage: React.FC = () => {
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                In the verified 7,043 customer cohort, baseline churn puts <strong>$139,130/month</strong> of recurring revenue at immediate risk. Our recall-optimized model catches <strong>70.59% of at-risk customers</strong> before they cancel.
+                In the verified {overview?.total_customers?.toLocaleString() || '7,043'} customer cohort, baseline churn puts <strong>{grossLoss}/month</strong> of recurring revenue at immediate risk. Our recall-optimized model catches <strong>{metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '70.6%'} of at-risk customers</strong> before they cancel.
               </p>
 
               <div className="pt-2">
@@ -600,19 +702,19 @@ export const LandingPage: React.FC = () => {
             <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
                 <div className="text-xs text-slate-500 font-semibold">Total Revenue Pool</div>
-                <div className="text-2xl font-bold text-slate-900 font-mono-nums">$456.1k</div>
+                <div className="text-2xl font-bold text-slate-900 font-mono-nums">{totalRevenue}</div>
                 <div className="text-[11px] text-slate-500">Monthly portfolio run-rate</div>
               </div>
 
               <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
                 <div className="text-xs text-rose-700 font-semibold">Gross Churn Exposure</div>
-                <div className="text-2xl font-bold text-rose-700 font-mono-nums">$139.1k</div>
+                <div className="text-2xl font-bold text-rose-700 font-mono-nums">{grossLoss}</div>
                 <div className="text-[11px] text-slate-500">Monthly revenue at risk</div>
               </div>
 
               <div className="p-5 rounded-xl bg-white border border-slate-200 space-y-2">
                 <div className="text-xs text-emerald-800 font-semibold">Preserved with Catch</div>
-                <div className="text-2xl font-bold text-emerald-700 font-mono-nums">$98.2k</div>
+                <div className="text-2xl font-bold text-emerald-700 font-mono-nums">{preservedCatch}</div>
                 <div className="text-[11px] text-slate-500">Flagged for early retention</div>
               </div>
             </div>
@@ -639,7 +741,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="text-sm font-bold text-slate-900">Cleansing & Encodings</div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Processed 7,043 Telco records, scaled continuous metrics with StandardScaler, and engineered 30 dummy features.
+                Processed {overview?.total_customers?.toLocaleString() || '7,043'} Telco records, scaled continuous metrics with StandardScaler, and engineered 30 dummy features.
               </p>
             </div>
 
@@ -649,7 +751,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="text-sm font-bold text-slate-900">Gradient Boosted Tree</div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Trained XGBoost classifier with optimal cutoff τ = 0.61, achieving 0.8446 ROC-AUC and 70.59% Early Catch Recall.
+                Trained XGBClassifier using tree boosting with logloss objective function and weighted positive class balance.
               </p>
             </div>
 
@@ -657,9 +759,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
                 03
               </div>
-              <div className="text-sm font-bold text-slate-900">FastAPI Asynchronous API</div>
+              <div className="text-sm font-bold text-slate-900">FastAPI Microservice</div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Model serialized in-memory for sub-4ms REST scoring, schema validation, and concurrent batch processing.
+                Sub-4ms inference latency with async endpoints, validation schemas, and automated batch CSV transformations.
               </p>
             </div>
 
@@ -667,9 +769,9 @@ export const LandingPage: React.FC = () => {
               <div className="w-7 h-7 rounded bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs">
                 04
               </div>
-              <div className="text-sm font-bold text-slate-900">Executive React Console</div>
+              <div className="text-sm font-bold text-slate-900">Executive Decision Portal</div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Client-side Recharts visual telemetry, drag-and-drop CSV batch evaluation, and prediction audit history.
+                Interactive risk threshold calibration ({metrics?.optimal_threshold !== undefined ? `τ = ${Number(metrics.optimal_threshold).toFixed(2)}` : 'calibrated cutoff'}), single account evaluation, and batch downloads.
               </p>
             </div>
           </div>
@@ -677,42 +779,36 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 6. Enterprise FAQ Accordion Section ──────────────────────── */}
+      {/* ── 6. Enterprise FAQ Section ────────────────────────────────── */}
       <section className="py-14 md:py-18 bg-[#F8FAFC] border-t border-slate-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Enterprise FAQ</h2>
+          <div className="text-center mb-10 space-y-2">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Questions & Architecture</h2>
             <p className="text-2xl sm:text-3xl font-bold text-slate-900">
               Frequently Asked Questions
-            </p>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Technical and operational specifications for the Telecom Customer Retention platform.
             </p>
           </div>
 
           <div className="space-y-3">
-            {FAQ_ITEMS.map((faq, idx) => {
+            {FAQ_ITEMS.map((item, idx) => {
               const isOpen = openFaqIdx === idx
               return (
-                <div
-                  key={idx}
-                  className="card-enterprise bg-white border-slate-200 overflow-hidden transition-all"
-                >
+                <div key={idx} className="bg-white border border-slate-200 rounded-xl overflow-hidden transition-all shadow-2xs">
                   <button
                     onClick={() => toggleFaq(idx)}
-                    className="w-full p-4 text-left flex items-center justify-between gap-4 font-semibold text-xs sm:text-sm text-slate-900 hover:text-indigo-600 cursor-pointer"
+                    className="w-full p-4.5 text-left flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
-                    <span>{faq.question}</span>
+                    <span className="text-sm font-bold text-slate-900">{item.question}</span>
                     {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+                      <ChevronUp className="w-4 h-4 text-slate-500 shrink-0" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
                     )}
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100">
-                      {faq.answer}
+                    <div className="px-4.5 pb-4.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                      {item.answer}
                     </div>
                   )}
                 </div>
@@ -723,109 +819,21 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 7. Call-to-Action Executive Section ──────────────────────── */}
-      <section className="py-12 bg-white border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="card-enterprise p-8 bg-[#0F172A] text-white flex flex-col md:flex-row items-center justify-between gap-6 border-slate-800">
-            <div className="space-y-1.5 text-left">
-              <h2 className="text-2xl font-bold tracking-tight">
-                Evaluate Telecom Accounts in Real-Time
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed">
-                Perform single customer risk evaluations, upload customer portfolio CSV files, or explore classification metrics in the executive telemetry dashboard.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Link
-                to="/dashboard/single"
-                className="btn-primary bg-white text-slate-900 hover:bg-slate-100 border-white text-xs"
-              >
-                <span>Single Account Audit</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-
-              <Link
-                to="/dashboard/batch"
-                className="btn-secondary bg-transparent text-white hover:bg-white/10 border-slate-700 text-xs"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-slate-300" />
-                <span>Upload Batch CSV</span>
-              </Link>
-            </div>
+      {/* ── 7. Footer ────────────────────────────────────────────────── */}
+      <footer className="py-8 bg-white border-t border-slate-200 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="font-semibold text-slate-800">Telecom Churn Predictor MLOps System</span>
+            <span className="text-slate-300">•</span>
+            <span>FastAPI + XGBoost Inference Engine</span>
           </div>
-        </div>
-      </section>
-
-      {/* ── 8. Classic Multi-Column Corporate Footer ─────────────────── */}
-      <footer className="mt-auto bg-white text-slate-500 text-xs py-10 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Brand Column */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded bg-[#0F172A] flex items-center justify-center text-white font-bold text-xs">
-                  <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 20h.01" />
-                    <path d="M7 20v-4" />
-                    <path d="M12 20v-8" />
-                    <path d="M17 20V8" />
-                    <path d="M22 4v16" />
-                  </svg>
-                </div>
-                <span className="text-sm font-bold text-slate-900">Telecom Churn Portal</span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Enterprise machine learning platform for telecom subscriber risk identification, revenue exposure management, and early retention telemetry.
-              </p>
-            </div>
-
-            {/* Platform Links */}
-            <div className="space-y-2.5">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">Platform Modules</div>
-              <ul className="space-y-1.5 text-xs">
-                <li><Link to="/dashboard" className="text-slate-600 hover:text-slate-900">Executive Dashboard</Link></li>
-                <li><Link to="/dashboard/single" className="text-slate-600 hover:text-slate-900">Single Account Risk</Link></li>
-                <li><Link to="/dashboard/batch" className="text-slate-600 hover:text-slate-900">Batch CSV Scoring</Link></li>
-                <li><Link to="/dashboard/history" className="text-slate-600 hover:text-slate-900">Prediction Audits</Link></li>
-              </ul>
-            </div>
-
-            {/* Governance Links */}
-            <div className="space-y-2.5">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">MLOps & Governance</div>
-              <ul className="space-y-1.5 text-xs">
-                <li><Link to="/dashboard/performance" className="text-slate-600 hover:text-slate-900">Model Telemetry & ROC</Link></li>
-                <li><Link to="/dashboard/settings" className="text-slate-600 hover:text-slate-900">Decision Thresholds</Link></li>
-                <li><a href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer" className="text-slate-600 hover:text-slate-900">FastAPI OpenAPI Specs</a></li>
-              </ul>
-            </div>
-
-            {/* Operational Specs */}
-            <div className="space-y-2.5">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">System Specifications</div>
-              <div className="space-y-1 text-xs text-slate-500">
-                <div>Model: Gradient Boosted Trees (XGBoost)</div>
-                <div>Dataset: IBM Telco (7,043 Records)</div>
-                <div>Backend: FastAPI Uvicorn (:8000)</div>
-                <div>Frontend: React 18 + Vite (:5173)</div>
-              </div>
-            </div>
+          <div>
+            <span>Dataset Provenance: IBM Telco Customer Churn ({overview?.total_customers?.toLocaleString() || '7,043'} Records)</span>
           </div>
-
-          <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 text-slate-400">
-            <div>
-              © 2026 Telecom Customer Churn Portal. Enterprise MLOps Edition.
-            </div>
-            <div className="flex items-center gap-2 text-[11px] font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="text-slate-600">FastAPI REST Server Connected</span>
-            </div>
-          </div>
-
         </div>
       </footer>
+
     </div>
   )
 }

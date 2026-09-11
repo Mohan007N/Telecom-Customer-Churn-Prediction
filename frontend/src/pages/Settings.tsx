@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Settings as SettingsIcon,
   Save,
@@ -13,14 +13,26 @@ import {
   Zap,
   Radio
 } from 'lucide-react'
-import { churnAPI } from '../services/api'
+import { churnAPI, API_BASE_URL } from '../services/api'
 
 export const SettingsPage: React.FC = () => {
-  const [apiUrl, setApiUrl] = useState<string>('http://localhost:8000/api/v1')
-  const [threshold, setThreshold] = useState<number>(0.61)
+  const [apiUrl, setApiUrl] = useState<string>(API_BASE_URL)
+  const [threshold, setThreshold] = useState<number>(0.5)
+  const [modelInfo, setModelInfo] = useState<any>(null)
+  const [metrics, setMetrics] = useState<any>(null)
   const [saved, setSaved] = useState<boolean>(false)
   const [pinging, setPinging] = useState<boolean>(false)
   const [pingResult, setPingResult] = useState<{ status: string; latencyMs: number } | null>(null)
+
+  useEffect(() => {
+    churnAPI.getModelInfo().then((res) => setModelInfo(res.data)).catch(() => {})
+    churnAPI.getMetrics().then((res) => {
+      setMetrics(res.data)
+      if (res.data?.optimal_threshold !== undefined) {
+        setThreshold(Number(res.data.optimal_threshold))
+      }
+    }).catch(() => {})
+  }, [])
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -154,7 +166,11 @@ export const SettingsPage: React.FC = () => {
 
             <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono">
               <span>Higher Sensitivity (Max Recall)</span>
-              <span className="font-semibold text-indigo-700">Calibrated Optimal: 0.61</span>
+              <span className="font-semibold text-indigo-700">
+                {metrics?.optimal_threshold !== undefined
+                  ? `Calibrated Optimal: τ = ${Number(metrics.optimal_threshold).toFixed(2)}`
+                  : 'Calibrated Baseline'}
+              </span>
               <span>Higher Precision (Min FP)</span>
             </div>
           </div>
@@ -172,17 +188,23 @@ export const SettingsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="p-3 bg-white rounded-lg border border-indigo-100 space-y-0.5">
               <div className="text-slate-400 text-[11px]">Classifier Engine</div>
-              <div className="font-bold text-slate-900 font-mono">XGBClassifier v1.0</div>
+              <div className="font-bold text-slate-900 font-mono">{modelInfo?.model_name || 'XGBoost Classifier'}</div>
             </div>
 
             <div className="p-3 bg-white rounded-lg border border-indigo-100 space-y-0.5">
               <div className="text-slate-400 text-[11px]">Feature Transformation</div>
-              <div className="font-bold text-slate-900 font-mono">StandardScaler + 30 Dummies</div>
+              <div className="font-bold text-slate-900 font-mono">
+                StandardScaler + {modelInfo?.num_features ? `${modelInfo.num_features} Features` : 'Features'}
+              </div>
             </div>
 
             <div className="p-3 bg-white rounded-lg border border-indigo-100 space-y-0.5">
               <div className="text-slate-400 text-[11px]">Holdout Test Set</div>
-              <div className="font-bold text-slate-900 font-mono">1,409 Telco Accounts</div>
+              <div className="font-bold text-slate-900 font-mono">
+                {metrics?.confusion_matrix
+                  ? `${(metrics.confusion_matrix.TN + metrics.confusion_matrix.FP + metrics.confusion_matrix.FN + metrics.confusion_matrix.TP).toLocaleString()} Accounts`
+                  : '--'}
+              </div>
             </div>
           </div>
         </div>

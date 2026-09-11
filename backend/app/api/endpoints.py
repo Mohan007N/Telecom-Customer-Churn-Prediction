@@ -91,16 +91,7 @@ async def get_model_metrics():
     predictor = get_predictor()
     metrics = predictor.metrics
     if not metrics:
-        metrics = {
-            "train_accuracy": 0.7641,
-            "test_accuracy": 0.7850,
-            "precision": 0.5777,
-            "recall": 0.7059,
-            "f1_score": 0.6354,
-            "roc_auc": 0.8446,
-            "optimal_threshold": 0.61,
-            "confusion_matrix": {"TN": 842, "FP": 193, "FN": 110, "TP": 264}
-        }
+        raise HTTPException(status_code=404, detail="Model metrics artifact not found or not yet generated.")
     return metrics
 
 
@@ -117,12 +108,12 @@ async def get_model_info():
         version=settings.APP_VERSION,
         num_features=len(predictor.feature_names),
         optimal_threshold=predictor.threshold,
-        training_accuracy=metrics.get("train_accuracy", 0.7641),
-        testing_accuracy=metrics.get("test_accuracy", 0.7850),
-        roc_auc=metrics.get("roc_auc", 0.8446),
-        recall=metrics.get("recall", 0.7059),
-        precision=metrics.get("precision", 0.5777),
-        f1_score=metrics.get("f1_score", 0.6354),
+        training_accuracy=float(metrics.get("train_accuracy", 0.0)),
+        testing_accuracy=float(metrics.get("test_accuracy", 0.0)),
+        roc_auc=float(metrics.get("roc_auc", 0.0)),
+        recall=float(metrics.get("recall", 0.0)),
+        precision=float(metrics.get("precision", 0.0)),
+        f1_score=float(metrics.get("f1_score", 0.0)),
         feature_names=predictor.feature_names
     )
 

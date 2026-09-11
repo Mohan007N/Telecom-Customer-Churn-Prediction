@@ -16,7 +16,7 @@ import {
   Layers,
   ArrowRight
 } from 'lucide-react'
-import { churnAPI } from '../services/api'
+import { churnAPI, getDownloadUrl } from '../services/api'
 import { addBatchPredictionRecords } from '../utils/predictionStorage'
 
 export const BatchPrediction: React.FC = () => {
@@ -107,16 +107,21 @@ export const BatchPrediction: React.FC = () => {
       setResponse(data)
 
       if (data.results && data.results.length > 0) {
-        const batchRecords = data.results.slice(0, 20).map((r: any) => ({
-          id: r.customer_id,
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          contract: 'CSV Upload',
-          monthlyCharges: '$--',
-          probability: r.churn_probability_pct,
-          probabilityVal: r.churn_probability,
-          riskLevel: r.risk_level,
-          status: r.churn_status
-        }))
+        const batchRecords = data.results.slice(0, 25).map((r: any, idx: number) => {
+          const match = previewRows.find((p) => (p.customerID || p.CustomerID || p['Customer ID']) === r.customer_id) || previewRows[idx]
+          const contract = match?.Contract || 'Batch CSV'
+          const monthly = match?.MonthlyCharges ? `$${Number(match.MonthlyCharges).toFixed(2)}` : '$--'
+          return {
+            id: r.customer_id,
+            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            contract: contract,
+            monthlyCharges: monthly,
+            probability: r.churn_probability_pct,
+            probabilityVal: r.churn_probability,
+            riskLevel: r.risk_level,
+            status: r.churn_status
+          }
+        })
         addBatchPredictionRecords(batchRecords)
       }
     } catch (err: any) {
@@ -313,7 +318,7 @@ export const BatchPrediction: React.FC = () => {
               </div>
               {response.download_url && (
                 <a
-                  href={`http://localhost:8000${response.download_url}`}
+                  href={getDownloadUrl(response.download_url)}
                   download
                   className="mt-2 btn-primary text-xs py-1.5 px-3 justify-center shadow-xs"
                 >

@@ -31,6 +31,16 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.predict import ChurnPredictor
 
+try:
+    from src.config_loader import load_config
+    _cfg = load_config()
+    _paths = _cfg.get("paths", {})
+    DEFAULT_METRICS_PATH = _paths.get("metrics_path", "reports/metrics.json")
+    DEFAULT_META_PATH = os.path.join(_paths.get("metadata_dir", "models"), "feature_metadata.json")
+except Exception:
+    DEFAULT_METRICS_PATH = "reports/metrics.json"
+    DEFAULT_META_PATH = "models/feature_metadata.json"
+
 
 # ─────────────────────────────────────────────────────────
 # Pydantic Schemas
@@ -117,9 +127,12 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+cors_origins_env = os.getenv("CORS_ORIGINS")
+origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()] if cors_origins_env else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -168,12 +181,12 @@ async def model_info():
     """Returns model metadata and performance metrics."""
     predictor = get_predictor()
     metrics = {}
-    if os.path.exists("reports/metrics.json"):
-        with open("reports/metrics.json", "r") as f:
+    if os.path.exists(DEFAULT_METRICS_PATH):
+        with open(DEFAULT_METRICS_PATH, "r") as f:
             metrics = json.load(f)
     meta = {}
-    if os.path.exists("models/feature_metadata.json"):
-        with open("models/feature_metadata.json", "r") as f:
+    if os.path.exists(DEFAULT_META_PATH):
+        with open(DEFAULT_META_PATH, "r") as f:
             meta = json.load(f)
     return {
         "model_type": "XGBoost Classifier",
@@ -252,4 +265,6 @@ async def predict_single(customer: CustomerInput):
 # ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("scripts.serve:app", host="0.0.0.0", port=8080, reload=True)
+    host = os.getenv("SERVE_HOST", "0.0.0.0")
+    port = int(os.getenv("SERVE_PORT", "8080"))
+    uvicorn.run("scripts.serve:app", host=host, port=port, reload=True)

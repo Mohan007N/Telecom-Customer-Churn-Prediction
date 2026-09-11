@@ -27,13 +27,24 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
 
 
 
-# ─────────────────────────────────────────────────────────
-# Default paths — can be overridden via CLI or function args
-# ─────────────────────────────────────────────────────────
-DEFAULT_MODEL_PATH   = "models/xgboost_churn_model.pkl"
-DEFAULT_SCALER_PATH  = "models/scaler.pkl"
-DEFAULT_META_PATH    = "models/feature_metadata.json"
-DEFAULT_METRICS_PATH = "reports/metrics.json"
+# Add project root to sys.path
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+try:
+    from src.config_loader import load_config
+    _cfg = load_config()
+    _paths = _cfg.get("paths", {})
+    DEFAULT_MODEL_PATH = _paths.get("model_output_path", "models/xgboost_churn_model.pkl")
+    DEFAULT_SCALER_PATH = _paths.get("scaler_output_path", "models/scaler.pkl")
+    DEFAULT_META_PATH = os.path.join(_paths.get("metadata_dir", "models"), "feature_metadata.json")
+    DEFAULT_METRICS_PATH = _paths.get("metrics_path", "reports/metrics.json")
+except Exception:
+    DEFAULT_MODEL_PATH = "models/xgboost_churn_model.pkl"
+    DEFAULT_SCALER_PATH = "models/scaler.pkl"
+    DEFAULT_META_PATH = "models/feature_metadata.json"
+    DEFAULT_METRICS_PATH = "reports/metrics.json"
 
 
 class ChurnPredictor:
@@ -172,10 +183,11 @@ class ChurnPredictor:
         predictions = (probabilities >= self.threshold).astype(int)
 
         results = []
+        medium_threshold = round(max(0.20, self.threshold * 0.65), 2)
         for prob, pred in zip(probabilities, predictions):
-            if prob >= 0.70:
+            if prob >= self.threshold:
                 risk = "High 🔴"
-            elif prob >= 0.45:
+            elif prob >= medium_threshold:
                 risk = "Medium 🟡"
             else:
                 risk = "Low 🟢"

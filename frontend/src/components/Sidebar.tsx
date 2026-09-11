@@ -32,20 +32,20 @@ interface NavGroup {
 }
 
 export const Sidebar: React.FC = () => {
-  const [modelStats, setModelStats] = useState({
-    accuracy: 78.50,
-    roc_auc: 0.8446,
-    threshold: 0.61
-  })
+  const [modelStats, setModelStats] = useState<{
+    accuracy: number | null
+    roc_auc: number | null
+    threshold: number | null
+  } | null>(null)
 
   useEffect(() => {
     churnAPI.getMetrics()
       .then((res) => {
-        if (res.data?.test_accuracy) {
+        if (res.data) {
           setModelStats({
-            accuracy: +(res.data.test_accuracy * 100).toFixed(1),
-            roc_auc: +(res.data.roc_auc || 0.8446).toFixed(4),
-            threshold: res.data.optimal_threshold || 0.61
+            accuracy: res.data.test_accuracy !== undefined ? +(res.data.test_accuracy * 100).toFixed(1) : null,
+            roc_auc: res.data.roc_auc !== undefined ? +Number(res.data.roc_auc).toFixed(4) : null,
+            threshold: res.data.optimal_threshold !== undefined ? +Number(res.data.optimal_threshold).toFixed(2) : null
           })
         }
       })
@@ -145,22 +145,28 @@ export const Sidebar: React.FC = () => {
           <div className="space-y-1 font-mono text-[11px] text-slate-500">
             <div className="flex justify-between">
               <span>Decision Cutoff:</span>
-              <span className="font-bold text-slate-800">τ = {modelStats.threshold}</span>
+              <span className="font-bold text-slate-800">
+                τ = {modelStats?.threshold !== null && modelStats?.threshold !== undefined ? modelStats.threshold : '--'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Test Accuracy:</span>
-              <span className="font-bold text-slate-800">{modelStats.accuracy}%</span>
+              <span className="font-bold text-slate-800">
+                {modelStats?.accuracy !== null && modelStats?.accuracy !== undefined ? `${modelStats.accuracy}%` : '--'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>ROC-AUC Score:</span>
-              <span className="font-bold text-indigo-600">{modelStats.roc_auc}</span>
+              <span className="font-bold text-indigo-600">
+                {modelStats?.roc_auc !== null && modelStats?.roc_auc !== undefined ? modelStats.roc_auc : '--'}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="px-1 text-center">
           <span className="text-[10px] text-slate-400 font-mono">
-            Calibrated on 7,043 Telco Cohort
+            Production MLOps Calibration
           </span>
         </div>
       </div>

@@ -4,40 +4,75 @@ Confusion Matrix Generator & Evaluator Script
 =============================================================
 Description: Evaluates model predictions on test data or saved metrics,
              generates an annotated confusion matrix plot with counts and percentages,
-             and computes detailed classification metrics.
+             and computes detailed classification metrics dynamically.
 =============================================================
 """
 
 import os
+import sys
 import json
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import joblib
 import pandas as pd
-from sklearn.metrics import confusion_matrix, classification_report
 
-def create_confusion_matrix(metrics_path="reports/metrics.json", output_dir="reports/plots", artifact_dir=None):
-    # Ensure directories exist
+# Add project root to sys.path
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+try:
+    from src.config_loader import load_config
+    _cfg = load_config()
+    _paths = _cfg.get("paths", {})
+    DEFAULT_METRICS_PATH = _paths.get("metrics_path", "reports/metrics.json")
+    DEFAULT_OUTPUT_DIR = _paths.get("figures_dir", "reports/plots")
+except Exception:
+    DEFAULT_METRICS_PATH = "reports/metrics.json"
+    DEFAULT_OUTPUT_DIR = "reports/plots"
+
+
+def create_confusion_matrix(metrics_path=DEFAULT_METRICS_PATH, output_dir=DEFAULT_OUTPUT_DIR, artifact_dir=None):
     os.makedirs(output_dir, exist_ok=True)
     
-    # Try reading from metrics.json first
+    # Try reading from metrics_path
     if os.path.exists(metrics_path):
         with open(metrics_path, "r") as f:
             metrics = json.load(f)
         
         cm_dict = metrics.get("confusion_matrix", {})
-        tn = cm_dict.get("TN", 838)
-        fp = cm_dict.get("FP", 197)
-        fn = cm_dict.get("FN", 108)
-        tp = cm_dict.get("TP", 266)
+        tn = cm_dict.get("TN", 0)
+        fp = cm_dict.get("FP", 0)
+        fn = cm_dict.get("FN", 0)
+        tp = cm_dict.get("TP", 0)
         cm = np.array([[tn, fp], [fn, tp]])
     else:
-        # Default fallback matrix from model test evaluation if file missing
-        tn, fp, fn, tp = 838, 197, 108, 266
-        cm = np.array([[tn, fp], [fn, tp]])
+        # If metrics.json is missing, attempt to compute from test data and model
+        try:
+            import joblib
+            model_path = _paths.get("model_output_path", "models/xgboost_churn_model.pkl") if '_paths' in globals() else "models/xgboost_churn_model.pkl"
+            x_test_path = _paths.get("x_test_path", "data/X_test.csv") if '_paths' in globals() else "data/X_test.csv"
+            y_test_path = _paths.get("y_test_path", "data/y_test.csv") if '_paths' in globals() else "data/y_test.csv"
+            
+            if os.path.exists(model_path) and os.path.exists(x_test_path) and os.path.exists(y_test_path):
+                from sklearn.metrics import confusion_matrix as sk_cm
+                model = joblib.load(model_path)
+                X_test = pd.read_csv(x_test_path).values
+                y_test = pd.read_csv(y_test_path).values.ravel()
+                y_probs = model.predict_proba(X_test)[:, 1]
+                threshold = 0.5
+                y_preds = (y_probs >= threshold).astype(int)
+                cm = sk_cm(y_test, y_preds)
+                tn, fp, fn, tp = cm.ravel()
+            else:
+                raise FileNotFoundError(f"Metrics file '{metrics_path}' and test datasets not found.")
+        except Exception as e:
+            raise RuntimeError(f"Unable to generate confusion matrix without metrics or test data: {e}")
 
     total = np.sum(cm)
+    if total == 0:
+        raise ValueError("Confusion matrix total sample count is zero.")
     
     # Format annotations: Count + Percentage + Label
     labels = np.array([
@@ -108,6 +143,16 @@ def create_confusion_matrix(metrics_path="reports/metrics.json", output_dir="rep
     print(f"False Negative Rate  : {fnr:.4f} ({fnr:.2%})")
     print("="*50)
 
+
 if __name__ == "__main__":
-    artifact_directory = r"C:\Users\mohan\.gemini\antigravity-ide\brain\350cc305-17e2-4e7a-9400-9fb78bc21da1"
-    create_confusion_matrix(artifact_dir=artifact_directory)
+    parser = argparse.ArgumentParser(description="Generate confusion matrix plot and summary metrics.")
+    parser.add_argument("--metrics-path", type=str, default=DEFAULT_METRICS_PATH, help="Path to metrics.json")
+    parser.add_argument("--output-dir", type=str, default=DEFAULT_OUTPUT_DIR, help="Directory to save confusion_matrix.png")
+    parser.add_argument("--artifact-dir", type=str, default=None, help="Optional artifact directory to copy plot to")
+    args = parser.parse_args()
+    
+    create_confusion_matrix(
+        metrics_path=args.metrics_path,
+        output_dir=args.output_dir,
+        artifact_dir=args.artifact_dir
+    )

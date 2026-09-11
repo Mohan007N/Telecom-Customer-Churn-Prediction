@@ -93,14 +93,8 @@ export const DashboardHome: React.FC = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState<boolean>(true)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
-  const [metrics, setMetrics] = useState<any>({
-    test_accuracy: 0.7850,
-    roc_auc: 0.8446,
-    recall: 0.7059,
-    precision: 0.5777,
-    f1_score: 0.6354,
-    optimal_threshold: 0.61
-  })
+  const [metrics, setMetrics] = useState<any>(null)
+  const [modelInfo, setModelInfo] = useState<any>(null)
   const [recentAudits, setRecentAudits] = useState<PredictionRecord[]>([])
   const [cohortFilter, setCohortFilter] = useState<string>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -109,12 +103,16 @@ export const DashboardHome: React.FC = () => {
     setLoading(true)
     Promise.all([
       churnAPI.getAnalytics(),
-      churnAPI.getMetrics()
+      churnAPI.getMetrics(),
+      churnAPI.getModelInfo()
     ])
-      .then(([analyticsRes, metricsRes]) => {
+      .then(([analyticsRes, metricsRes, modelInfoRes]) => {
         setAnalytics(analyticsRes.data)
         if (metricsRes.data) {
           setMetrics(metricsRes.data)
+        }
+        if (modelInfoRes.data) {
+          setModelInfo(modelInfoRes.data)
         }
       })
       .catch((err) => {
@@ -131,50 +129,30 @@ export const DashboardHome: React.FC = () => {
     loadData()
   }, [])
 
-  // Robust fallback values matching verified Telco dataset
-  const overview = analytics?.overview || {
-    total_customers: 7043,
-    total_churned: 1869,
-    total_retained: 5174,
-    churn_rate_pct: 26.54,
-    retention_rate_pct: 73.46,
-    avg_tenure_months: 32.4,
-    avg_monthly_charges: 64.76,
-    total_monthly_revenue: 456116.6,
-    monthly_churn_loss: 139130.85,
-    dataset_provenance: 'Telco Customer Churn (IBM/Kaggle Public Benchmark)'
-  }
-
-  const contractChartData = analytics?.contract_distribution || [
-    { contract: 'Month-to-month', total: 3875, churned: 1655, retained: 2220, churn_rate_pct: 42.7 },
-    { contract: 'One year', total: 1473, churned: 166, retained: 1307, churn_rate_pct: 11.3 },
-    { contract: 'Two year', total: 1695, churned: 48, retained: 1647, churn_rate_pct: 2.8 },
-  ]
-
+  const overview = analytics?.overview
+  const contractChartData = analytics?.contract_distribution || []
   const tenureChartData = analytics?.tenure_cohorts?.map((d) => ({
     name: d.cohort.split(' ')[0],
     churn_rate: d.churn_rate_pct,
     retained: d.retained,
     churned: d.churned
-  })) || [
-    { name: '0-1Y', churn_rate: 47.4, retained: 1149, churned: 1037 },
-    { name: '1-2Y', churn_rate: 28.7, retained: 730, churned: 294 },
-    { name: '2-4Y', churn_rate: 20.5, retained: 1268, churned: 326 },
-    { name: '4+Y', churn_rate: 9.5, retained: 2027, churned: 212 },
-  ]
-
-  const featureChartData = analytics?.feature_importances || [
-    { label: 'Month-to-Month Contract Status', importance_pct: 39.70 },
-    { label: 'Cost Ratio Per Service', importance_pct: 6.24 },
-    { label: 'Fiber Optic High-Speed Service', importance_pct: 6.04 },
-    { label: 'Long-Term 2-Year Contract', importance_pct: 5.35 },
-    { label: 'Brand Loyalty (4+ Yrs)', importance_pct: 4.06 },
-    { label: 'Manual Electronic Check', importance_pct: 3.44 },
-    { label: 'Medium-Term 1-Year Contract', importance_pct: 2.92 },
-    { label: 'Online Security Absence', importance_pct: 2.41 },
-  ]
-
+  })) || []
+  const featureChartData = analytics?.feature_importances || []
   const rawSampleCustomers = analytics?.sample_customers || []
+
+  // Dynamic contract hazard calculations
+  const m2mRow = contractChartData.find((c) => c.contract === 'Month-to-month')
+  const twoYrRow = contractChartData.find((c) => c.contract === 'Two year')
+  const m2mRate = m2mRow ? m2mRow.churn_rate_pct : 0
+  const twoYrRate = twoYrRow ? twoYrRow.churn_rate_pct : 0
+  const hazardMultiplier = twoYrRate > 0 ? (m2mRate / twoYrRate).toFixed(1) : null
+
+  // Dynamic tenure retention calculations
+  const fourYrCohort = analytics?.tenure_cohorts?.find((t) => t.cohort.includes('4+'))
+  const zeroOneCohort = analytics?.tenure_cohorts?.find((t) => t.cohort.includes('0-1'))
+  const fourYrRate = fourYrCohort ? fourYrCohort.churn_rate_pct : 0
+  const zeroOneRate = zeroOneCohort ? zeroOneCohort.churn_rate_pct : 0
+  const tenureRiskDrop = zeroOneRate > 0 ? Math.round(((zeroOneRate - fourYrRate) / zeroOneRate) * 100) : null
 
   // Filtered Cohort Data
   const filteredCustomers = useMemo(() => {
@@ -201,6 +179,12 @@ export const DashboardHome: React.FC = () => {
     navigate('/dashboard/single')
   }
 
+  const optimalThresholdVal = metrics?.optimal_threshold !== undefined
+    ? Number(metrics.optimal_threshold).toFixed(2)
+    : '--'
+
+  const totalFeaturesCount = modelInfo?.num_features || featureChartData.length || '--'
+
   return (
     <div className="space-y-6 pb-12 font-sans selection:bg-slate-200 selection:text-slate-900">
       
@@ -211,22 +195,26 @@ export const DashboardHome: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span className="font-semibold text-slate-900">Gradient Boosted Telemetry</span>
             <span className="text-slate-300">•</span>
-            <span className="text-slate-600 font-mono">Active Cutoff τ = {metrics.optimal_threshold || 0.61}</span>
+            <span className="text-slate-600 font-mono">
+              Active Cutoff τ = {optimalThresholdVal}
+            </span>
           </div>
 
           <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
-            <span>Latency:</span>
-            <span className="font-semibold text-slate-900 font-mono">&lt;4ms</span>
+            <span>Model:</span>
+            <span className="font-semibold text-slate-900 font-mono">{modelInfo?.model_name || 'XGBoost'}</span>
           </div>
 
           <div className="hidden md:flex items-center gap-1.5 text-slate-500">
             <span>Features:</span>
-            <span className="font-semibold text-slate-900 font-mono">30 Encodings</span>
+            <span className="font-semibold text-slate-900 font-mono">{totalFeaturesCount} Encodings</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 text-slate-500">
             <span>Dataset:</span>
-            <span className="font-semibold text-slate-900">IBM Telco (7,043 Records)</span>
+            <span className="font-semibold text-slate-900">
+              {overview?.dataset_provenance || 'Telco Dataset'} {overview?.total_customers ? `(${overview.total_customers.toLocaleString()} Records)` : ''}
+            </span>
           </div>
         </div>
 
@@ -234,7 +222,7 @@ export const DashboardHome: React.FC = () => {
           <button
             onClick={loadData}
             disabled={loading}
-            className="btn-secondary text-xs py-1 px-2.5"
+            className="btn-secondary text-xs py-1 px-2.5 cursor-pointer"
             title="Reload telemetry data"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
@@ -275,113 +263,137 @@ export const DashboardHome: React.FC = () => {
       </div>
 
       {/* ── 3. Four Key KPI Master Cards ─────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        {/* Card 1: Total Portfolio Volume */}
-        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-[#0F172A]"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">
-                Total Enterprise Portfolio
-              </span>
-              <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
-                {overview.total_customers.toLocaleString()}
+      {overview ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          {/* Card 1: Total Portfolio Volume */}
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-[#0F172A]"></div>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-500">
+                  Total Enterprise Portfolio
+                </span>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
+                  {overview.total_customers.toLocaleString()}
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
+                <Users className="w-5 h-5 text-slate-800" />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center">
-              <Users className="w-5 h-5 text-slate-800" />
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Monthly Run-Rate:</span>
+              <span className="font-mono font-bold text-slate-900">${(overview.total_monthly_revenue / 1000).toFixed(1)}k/mo</span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Avg Account Tenure:</span>
+              <span className="font-mono font-bold text-slate-700">{overview.avg_tenure_months} Months</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Monthly Run-Rate:</span>
-            <span className="font-mono font-bold text-slate-900">${(overview.total_monthly_revenue / 1000).toFixed(1)}k/mo</span>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Avg Account Tenure:</span>
-            <span className="font-mono font-bold text-slate-700">{overview.avg_tenure_months} Months</span>
-          </div>
-        </div>
 
-        {/* Card 2: Model Performance & Accuracy */}
-        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">
-                Model Detection Accuracy
-              </span>
-              <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
-                {(metrics.test_accuracy * 100).toFixed(1)}%
+          {/* Card 2: Model Performance & Accuracy */}
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-600"></div>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-500">
+                  Model Detection Accuracy
+                </span>
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 font-mono-nums mt-0.5">
+                  {metrics?.test_accuracy !== undefined ? `${(metrics.test_accuracy * 100).toFixed(1)}%` : '--'}
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center">
+                <Award className="w-5 h-5 text-indigo-700" />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center">
-              <Award className="w-5 h-5 text-indigo-700" />
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">ROC-AUC Score:</span>
+              <span className="font-mono font-bold text-indigo-600">
+                {metrics?.roc_auc !== undefined ? metrics.roc_auc.toFixed(4) : '--'}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Early Catch Recall:</span>
+              <span className="font-mono font-bold text-slate-700">
+                {metrics?.recall !== undefined ? `${(metrics.recall * 100).toFixed(1)}%` : '--'}
+              </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">ROC-AUC Score:</span>
-            <span className="font-mono font-bold text-indigo-600">{metrics.roc_auc.toFixed(4)}</span>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Early Catch Recall:</span>
-            <span className="font-mono font-bold text-slate-700">{(metrics.recall * 100).toFixed(1)}%</span>
-          </div>
-        </div>
 
-        {/* Card 3: Churn Risk Exposure */}
-        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">
-                Churn Risk Exposure
-              </span>
-              <div className="text-2xl sm:text-3xl font-bold text-rose-600 font-mono-nums mt-0.5">
-                {overview.total_churned.toLocaleString()}
+          {/* Card 3: Churn Risk Exposure */}
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-500">
+                  Churn Risk Exposure
+                </span>
+                <div className="text-2xl sm:text-3xl font-bold text-rose-600 font-mono-nums mt-0.5">
+                  {overview ? overview.total_churned.toLocaleString() : '--'}
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center">
+                <UserX className="w-5 h-5 text-rose-600" />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 border border-rose-100 flex items-center justify-center">
-              <UserX className="w-5 h-5 text-rose-600" />
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Baseline Churn Rate:</span>
+              <span className="font-mono font-bold text-rose-600">
+                {overview ? `${overview.churn_rate_pct}%` : '--'}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Monthly Revenue at Risk:</span>
+              <span className="font-mono font-bold text-rose-600">
+                {overview ? `$${(overview.monthly_churn_loss / 1000).toFixed(1)}k/mo` : '--'}
+              </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Baseline Churn Rate:</span>
-            <span className="font-mono font-bold text-rose-600">{overview.churn_rate_pct}%</span>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Monthly Revenue at Risk:</span>
-            <span className="font-mono font-bold text-rose-600">${(overview.monthly_churn_loss / 1000).toFixed(1)}k/mo</span>
-          </div>
-        </div>
 
-        {/* Card 4: Retained Accounts */}
-        <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500">
-                Retained Enterprise Base
-              </span>
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-600 font-mono-nums mt-0.5">
-                {overview.total_retained.toLocaleString()}
+          {/* Card 4: Retained Accounts */}
+          <div className="card-enterprise p-5 relative overflow-hidden bg-white group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-semibold text-slate-500">
+                  Retained Enterprise Base
+                </span>
+                <div className="text-2xl sm:text-3xl font-bold text-emerald-600 font-mono-nums mt-0.5">
+                  {overview ? overview.total_retained.toLocaleString() : '--'}
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-emerald-600" />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-emerald-600" />
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Portfolio Retention:</span>
+              <span className="font-mono font-bold text-emerald-600">
+                {overview ? `${overview.retention_rate_pct}%` : '--'}
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Secured Monthly Run:</span>
+              <span className="font-mono font-bold text-emerald-600">
+                {overview ? `$${((overview.total_monthly_revenue - overview.monthly_churn_loss) / 1000).toFixed(1)}k/mo` : '--'}
+              </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Portfolio Retention:</span>
-            <span className="font-mono font-bold text-emerald-600">{overview.retention_rate_pct}%</span>
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium">Secured Monthly Run:</span>
-            <span className="font-mono font-bold text-emerald-600">${((overview.total_monthly_revenue - overview.monthly_churn_loss) / 1000).toFixed(1)}k/mo</span>
-          </div>
-        </div>
 
-      </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="card-enterprise p-5 bg-white animate-pulse space-y-3">
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+              <div className="h-8 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-100 rounded w-full"></div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── 4. Real Interactive Visualizations ───────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -398,7 +410,7 @@ export const DashboardHome: React.FC = () => {
               </p>
             </div>
             <span className="text-[11px] font-mono font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">
-              7,043 Records
+              {overview?.total_customers ? `${overview.total_customers.toLocaleString()} Records` : 'Active Portfolio'}
             </span>
           </div>
 
@@ -423,8 +435,12 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-            <span className="text-slate-600">Month-to-Month accounts churn at <strong>42.7%</strong> vs <strong>2.8%</strong> for 2-Year Contracts.</span>
-            <span className="font-bold text-rose-600">+15.2x Hazard Ratio</span>
+            <span className="text-slate-600">
+              Month-to-Month accounts churn at <strong>{m2mRate}%</strong> vs <strong>{twoYrRate}%</strong> for 2-Year Contracts.
+            </span>
+            {hazardMultiplier && (
+              <span className="font-bold text-rose-600">+{hazardMultiplier}x Hazard Ratio</span>
+            )}
           </div>
         </div>
 
@@ -474,8 +490,12 @@ export const DashboardHome: React.FC = () => {
           </div>
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-            <span className="text-slate-600">Accounts active for 4+ years experience only <strong className="text-emerald-700">9.5%</strong> churn.</span>
-            <span className="font-bold text-emerald-700">80% Risk Drop</span>
+            <span className="text-slate-600">
+              Accounts active for 4+ years experience only <strong className="text-emerald-700">{fourYrRate}%</strong> churn.
+            </span>
+            {tenureRiskDrop !== null && (
+              <span className="font-bold text-emerald-700">{tenureRiskDrop}% Risk Drop</span>
+            )}
           </div>
         </div>
 
@@ -493,34 +513,38 @@ export const DashboardHome: React.FC = () => {
               <span className="text-xs font-semibold text-slate-600">Tree-Gain Feature Weights</span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
-              Top XGBoost Decision Drivers for Customer Churn
+              Top Decision Drivers for Customer Churn
             </h3>
           </div>
           <div className="text-xs text-slate-600 font-mono bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
-            Pipeline Features: <strong>30 Engineered</strong>
+            Pipeline Features: <strong>{totalFeaturesCount} Engineered</strong>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
-          {featureChartData.slice(0, 8).map((feat, idx) => (
-            <div key={idx} className="space-y-1.5">
-              <div className="flex justify-between items-center text-xs font-semibold">
-                <span className="text-slate-800 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded bg-slate-100 text-slate-700 text-[10px] font-mono flex items-center justify-center font-bold border border-slate-200">
-                    #{idx + 1}
+          {featureChartData.length > 0 ? (
+            featureChartData.slice(0, 8).map((feat, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs font-semibold">
+                  <span className="text-slate-800 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-slate-100 text-slate-700 text-[10px] font-mono flex items-center justify-center font-bold border border-slate-200">
+                      #{idx + 1}
+                    </span>
+                    {feat.label}
                   </span>
-                  {feat.label}
-                </span>
-                <span className="font-mono text-slate-900 font-bold">{feat.importance_pct}%</span>
+                  <span className="font-mono text-slate-900 font-bold">{feat.importance_pct}%</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#0F172A]"
+                    style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#0F172A]"
-                  style={{ width: `${Math.min(feat.importance_pct * 2.2, 100)}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="col-span-2 text-center py-4 text-xs text-slate-400">Loading model features...</div>
+          )}
         </div>
       </div>
 
@@ -688,7 +712,7 @@ export const DashboardHome: React.FC = () => {
               ) : (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
-                    No verified cohort records matching filter.
+                    {loading ? 'Loading verified cohort telemetry...' : 'No verified cohort records matching filter.'}
                   </td>
                 </tr>
               )}

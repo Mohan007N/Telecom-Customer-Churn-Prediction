@@ -18,6 +18,8 @@ import pandas as pd
 from typing import Dict, List, Union, Optional
 from loguru import logger
 
+from app.core.config import settings
+
 def _load_artifact(path_str: str):
     """Safely loads a pickle/joblib file into memory from path or fallbacks."""
     candidates = [
@@ -68,7 +70,7 @@ class ChurnPredictorEngine:
         self.feature_names: List[str] = meta["feature_names"]
         self.dropped_cols: List[str] = meta.get("dropped_cols", ["customerID", "gender", "PhoneService"])
         
-        self.threshold = 0.61  # Optimal default threshold
+        self.threshold = settings.DEFAULT_THRESHOLD
         metrics_candidates = [
             Path(metrics_path),
             Path("reports") / Path(metrics_path).name,
@@ -80,7 +82,7 @@ class ChurnPredictorEngine:
             if cand.exists() and cand.is_file():
                 try:
                     self.metrics = json.loads(cand.read_text(encoding="utf-8"))
-                    self.threshold = self.metrics.get("optimal_threshold", 0.61)
+                    self.threshold = float(self.metrics.get("optimal_threshold", settings.DEFAULT_THRESHOLD))
                     break
                 except Exception:
                     pass
@@ -153,7 +155,7 @@ class ChurnPredictorEngine:
         return df
 
     def predict_dataframe(self, df: pd.DataFrame, custom_threshold: Optional[float] = None) -> List[Dict]:
-        thresh = custom_threshold if custom_threshold is not None else self.threshold
+        thresh = float(custom_threshold) if custom_threshold is not None else self.threshold
 
         df_engineered = self._engineer_features(df)
         df_encoded = pd.get_dummies(df_engineered, drop_first=True)
@@ -163,13 +165,15 @@ class ChurnPredictorEngine:
         probabilities = self.model.predict_proba(X_scaled)[:, 1]
         predictions = (probabilities >= thresh).astype(int)
 
+        medium_threshold = max(0.20, thresh * 0.65)
+
         results = []
         for i, (prob, pred) in enumerate(zip(probabilities, predictions)):
             p_val = round(float(prob), 4)
-            if p_val >= 0.61:
+            if p_val >= thresh:
                 risk = "High Risk"
                 risk_code = "HIGH"
-            elif p_val >= 0.40:
+            elif p_val >= medium_threshold:
                 risk = "Medium Risk"
                 risk_code = "MEDIUM"
             else:

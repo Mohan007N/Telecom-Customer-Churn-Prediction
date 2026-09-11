@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   UserCheck,
   AlertCircle,
@@ -18,134 +18,55 @@ import {
 import { churnAPI } from '../services/api'
 import { addPredictionRecord } from '../utils/predictionStorage'
 
-// Real Customer Examples from Telco Dataset CSV
-const REAL_SAMPLE_CUSTOMERS = [
-  {
-    id: '3668-QPYBK',
-    title: 'Customer 3668-QPYBK',
-    subtitle: 'Month-to-Month • 2 Mos Tenure • DSL',
-    expectedRisk: 'High Risk (87%)',
-    badgeColor: 'rose',
-    data: {
-      customerID: '3668-QPYBK',
-      gender: 'Male',
-      SeniorCitizen: 0,
-      Partner: 'No',
-      Dependents: 'No',
-      tenure: 2,
-      PhoneService: 'Yes',
-      MultipleLines: 'No',
-      InternetService: 'DSL',
-      OnlineSecurity: 'Yes',
-      OnlineBackup: 'Yes',
-      DeviceProtection: 'No',
-      TechSupport: 'No',
-      StreamingTV: 'No',
-      StreamingMovies: 'No',
-      Contract: 'Month-to-month',
-      PaperlessBilling: 'Yes',
-      PaymentMethod: 'Mailed check',
-      MonthlyCharges: 53.85,
-      TotalCharges: 108.15
-    }
-  },
-  {
-    id: '9305-CDSKC',
-    title: 'Customer 9305-CDSKC',
-    subtitle: 'Month-to-Month • Fiber Optic • $99.65/mo',
-    expectedRisk: 'High Risk (91%)',
-    badgeColor: 'rose',
-    data: {
-      customerID: '9305-CDSKC',
-      gender: 'Female',
-      SeniorCitizen: 0,
-      Partner: 'No',
-      Dependents: 'No',
-      tenure: 8,
-      PhoneService: 'Yes',
-      MultipleLines: 'Yes',
-      InternetService: 'Fiber optic',
-      OnlineSecurity: 'No',
-      OnlineBackup: 'No',
-      DeviceProtection: 'Yes',
-      TechSupport: 'No',
-      StreamingTV: 'Yes',
-      StreamingMovies: 'Yes',
-      Contract: 'Month-to-month',
-      PaperlessBilling: 'Yes',
-      PaymentMethod: 'Electronic check',
-      MonthlyCharges: 99.65,
-      TotalCharges: 820.50
-    }
-  },
-  {
-    id: '5575-GNVDE',
-    title: 'Customer 5575-GNVDE',
-    subtitle: '1-Year Contract • 34 Mos • DSL',
-    expectedRisk: 'Low Risk (14%)',
-    badgeColor: 'emerald',
-    data: {
-      customerID: '5575-GNVDE',
-      gender: 'Male',
-      SeniorCitizen: 0,
-      Partner: 'No',
-      Dependents: 'No',
-      tenure: 34,
-      PhoneService: 'Yes',
-      MultipleLines: 'No',
-      InternetService: 'DSL',
-      OnlineSecurity: 'Yes',
-      OnlineBackup: 'No',
-      DeviceProtection: 'Yes',
-      TechSupport: 'No',
-      StreamingTV: 'No',
-      StreamingMovies: 'No',
-      Contract: 'One year',
-      PaperlessBilling: 'No',
-      PaymentMethod: 'Mailed check',
-      MonthlyCharges: 56.95,
-      TotalCharges: 1889.50
-    }
-  },
-  {
-    id: '7795-CFOCW',
-    title: 'Customer 7795-CFOCW',
-    subtitle: '1-Year Contract • 45 Mos • Bank Transfer',
-    expectedRisk: 'Low Risk (8%)',
-    badgeColor: 'emerald',
-    data: {
-      customerID: '7795-CFOCW',
-      gender: 'Male',
-      SeniorCitizen: 0,
-      Partner: 'No',
-      Dependents: 'No',
-      tenure: 45,
-      PhoneService: 'No',
-      MultipleLines: 'No phone service',
-      InternetService: 'DSL',
-      OnlineSecurity: 'Yes',
-      OnlineBackup: 'No',
-      DeviceProtection: 'Yes',
-      TechSupport: 'Yes',
-      StreamingTV: 'No',
-      StreamingMovies: 'No',
-      Contract: 'One year',
-      PaperlessBilling: 'No',
-      PaymentMethod: 'Bank transfer (automatic)',
-      MonthlyCharges: 42.30,
-      TotalCharges: 1840.75
-    }
-  }
-]
+const DEFAULT_FORM_DATA = {
+  customerID: '7590-VHVEG',
+  gender: 'Female',
+  SeniorCitizen: 0,
+  Partner: 'Yes',
+  Dependents: 'No',
+  tenure: 1,
+  PhoneService: 'No',
+  MultipleLines: 'No phone service',
+  InternetService: 'DSL',
+  OnlineSecurity: 'No',
+  OnlineBackup: 'Yes',
+  DeviceProtection: 'No',
+  TechSupport: 'No',
+  StreamingTV: 'No',
+  StreamingMovies: 'No',
+  Contract: 'Month-to-month',
+  PaperlessBilling: 'Yes',
+  PaymentMethod: 'Electronic check',
+  MonthlyCharges: 29.85,
+  TotalCharges: 29.85
+}
 
 export const SinglePrediction: React.FC = () => {
-  const [formData, setFormData] = useState<any>(REAL_SAMPLE_CUSTOMERS[0].data)
+  const [formData, setFormData] = useState<any>(DEFAULT_FORM_DATA)
+  const [analytics, setAnalytics] = useState<any>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPresetId, setSelectedPresetId] = useState<string>(REAL_SAMPLE_CUSTOMERS[0].id)
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('')
 
-  React.useEffect(() => {
+  // Load real sample customer presets from backend
+  useEffect(() => {
+    churnAPI.getAnalytics()
+      .then((res) => {
+        setAnalytics(res.data)
+        if (res.data?.sample_customers?.length > 0 && !sessionStorage.getItem('prefill_customer')) {
+          const first = res.data.sample_customers[0]
+          setFormData({
+            ...first,
+            tenure: Number(first.tenure) || 1,
+            MonthlyCharges: Number(first.MonthlyCharges) || 50,
+            TotalCharges: Number(first.TotalCharges) || 50
+          })
+          setSelectedPresetId(first.customerID)
+        }
+      })
+      .catch(() => {})
+
     const prefill = sessionStorage.getItem('prefill_customer')
     if (prefill) {
       try {
@@ -158,10 +79,27 @@ export const SinglePrediction: React.FC = () => {
           MonthlyCharges: Number(parsed.MonthlyCharges) || 0,
           TotalCharges: Number(parsed.TotalCharges) || 0,
         }))
-        setSelectedPresetId('')
+        setSelectedPresetId(parsed.customerID || '')
       } catch (e) {}
     }
   }, [])
+
+  const samplePresets = React.useMemo(() => {
+    if (!analytics?.sample_customers) return []
+    return analytics.sample_customers.slice(0, 4).map((cust: any) => ({
+      id: cust.customerID,
+      title: `Customer ${cust.customerID}`,
+      subtitle: `${cust.Contract} • ${cust.tenure} Mos • ${cust.InternetService}`,
+      expectedRisk: `${cust.risk_level} (${cust.churn_probability_pct})`,
+      badgeColor: cust.risk_level === 'High Risk' ? 'rose' : cust.risk_level === 'Medium Risk' ? 'amber' : 'emerald',
+      data: {
+        ...cust,
+        tenure: Number(cust.tenure) || 1,
+        MonthlyCharges: Number(cust.MonthlyCharges) || 50,
+        TotalCharges: Number(cust.TotalCharges) || 50
+      }
+    }))
+  }, [analytics])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
@@ -171,7 +109,7 @@ export const SinglePrediction: React.FC = () => {
     }))
   }
 
-  const handleApplyPreset = (preset: typeof REAL_SAMPLE_CUSTOMERS[0]) => {
+  const handleApplyPreset = (preset: any) => {
     setFormData(preset.data)
     setSelectedPresetId(preset.id)
     setResult(null)
@@ -207,7 +145,7 @@ export const SinglePrediction: React.FC = () => {
     }
   }
 
-  // Generate dynamic actionable retention recommendations based on attributes
+  // Dynamic actionable retention recommendations based on real attributes
   const getRetentionRecommendations = () => {
     if (!result) return []
     const recommendations: Array<{ action: string; impact: string; icon: any }> = []
@@ -236,7 +174,7 @@ export const SinglePrediction: React.FC = () => {
       })
     }
 
-    if (formData.tenure < 12) {
+    if (Number(formData.tenure) < 12) {
       recommendations.push({
         action: 'Trigger customer success outreach check-in at 30-day milestone',
         impact: '-15% Early Defection Drop',
@@ -275,46 +213,50 @@ export const SinglePrediction: React.FC = () => {
         </div>
       </div>
 
-      {/* Preset Benchmark Accounts Quick Selector */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-700 flex items-center gap-1.5">
-            <BookmarkPlus className="w-4 h-4 text-indigo-600" />
-            <span>Load Benchmark Account Archetype:</span>
-          </span>
-          <span className="text-slate-400 font-mono text-[11px]">Click preset to prefill form</span>
-        </div>
+      {/* Preset Benchmark Accounts Quick Selector from Dataset */}
+      {samplePresets.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-700 flex items-center gap-1.5">
+              <BookmarkPlus className="w-4 h-4 text-indigo-600" />
+              <span>Load Real Benchmark Account from Dataset:</span>
+            </span>
+            <span className="text-slate-400 font-mono text-[11px]">Click preset to prefill form</span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {REAL_SAMPLE_CUSTOMERS.map((preset) => {
-            const isSelected = selectedPresetId === preset.id
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => handleApplyPreset(preset)}
-                className={`card-enterprise p-3.5 text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-600'
-                    : 'bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <span className="font-mono font-bold text-xs text-slate-900">{preset.id}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono ${
-                    preset.badgeColor === 'rose'
-                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                  }`}>
-                    {preset.expectedRisk}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1 line-clamp-1">{preset.subtitle}</div>
-              </button>
-            )
-          })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {samplePresets.map((preset: any) => {
+              const isSelected = selectedPresetId === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset)}
+                  className={`card-enterprise p-3.5 text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-600'
+                      : 'bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <span className="font-mono font-bold text-xs text-slate-900">{preset.id}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase font-mono ${
+                      preset.badgeColor === 'rose'
+                        ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                        : preset.badgeColor === 'amber'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    }`}>
+                      {preset.expectedRisk}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1 line-clamp-1">{preset.subtitle}</div>
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Form Container */}
@@ -457,7 +399,7 @@ export const SinglePrediction: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:opacity-50 shadow-xs text-xs py-2 px-4"
+                className="btn-primary disabled:opacity-50 shadow-xs text-xs py-2 px-4 cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -522,8 +464,11 @@ export const SinglePrediction: React.FC = () => {
                   <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        result.churn_probability >= 0.61 ? 'bg-rose-500' :
-                        result.churn_probability >= 0.40 ? 'bg-amber-500' : 'bg-emerald-500'
+                        result.risk_code === 'HIGH' || result.risk_level === 'High Risk'
+                          ? 'bg-rose-500'
+                          : result.risk_code === 'MEDIUM' || result.risk_level === 'Medium Risk'
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
                       }`}
                       style={{ width: `${result.churn_probability * 100}%` }}
                     ></div>
@@ -590,5 +535,3 @@ export const SinglePrediction: React.FC = () => {
     </div>
   )
 }
-
-
