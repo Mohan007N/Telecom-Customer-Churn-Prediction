@@ -14,7 +14,8 @@ import {
   Database,
   Sparkles,
   Layers,
-  Activity
+  Activity,
+  Radio
 } from 'lucide-react'
 import { churnAPI } from '../services/api'
 
@@ -75,6 +76,7 @@ export const Sidebar: React.FC = () => {
       group: 'MLOps & Governance',
       badgeColor: 'text-purple-600 bg-purple-50 border-purple-200',
       items: [
+        { path: '/dashboard/monitoring', label: 'Live Drift & Monitor', icon: Radio, colorClass: 'text-emerald-500', badge: 'PSI' },
         { path: '/dashboard/performance', label: 'Model Telemetry & ROC', icon: BarChart3, colorClass: 'text-purple-500' },
         { path: '/dashboard/settings', label: 'Threshold Settings', icon: Settings, colorClass: 'text-amber-500' },
       ]

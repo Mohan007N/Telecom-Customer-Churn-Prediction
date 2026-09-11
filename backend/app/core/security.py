@@ -2,19 +2,22 @@
 =============================================================
 Security Module — Middleware, Rate Limiting & Input Sanitization
 =============================================================
-Provides security headers, IP-based sliding-window rate limiting,
-request size limiting, and CSV formula injection prevention.
+Provides enterprise security headers, proxy-aware IP sliding-window
+rate limiting, payload validation, and CSV formula injection prevention.
 =============================================================
 """
 
 import time
 import re
-from typing import Dict, List, Tuple, Optional
-from fastapi import Request, HTTPException
+from typing import Dict, List, Optional
+from fastapi import Request, HTTPException, Security, status
+from fastapi.security.api_key import APIKeyHeader
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, JSONResponse
 from loguru import logger
 from app.core.config import settings
+
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
@@ -42,13 +45,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Restrict browser feature permissions
         response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
         
-        # Content Security Policy
+        # Content Security Policy (allows necessary CDNs and API communication)
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "img-src 'self' data: https:; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
             "connect-src 'self' *;"
         )
         
@@ -59,6 +62,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     """
     In-memory sliding-window IP rate limiter to protect against
     DDoS, brute force attacks, and inference resource exhaustion.
+    Includes X-Forwarded-For support for Render and cloud load balancers.
     """
     def __init__(
         self,
@@ -72,9 +76,20 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self.requests_log: Dict[str, List[float]] = {}
         self.last_cleanup = time.time()
 
+    def _get_client_ip(self, request: Request) -> str:
+        """Resolves client IP behind reverse proxies (Render, Cloudflare, AWS)."""
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            # First IP in list is original client
+            return forwarded_for.split(",")[0].strip()
+        real_ip = request.headers.get("X-Real-IP")
+        if real_ip:
+            return real_ip.strip()
+        return request.client.host if request.client else "unknown"
+
     def _cleanup_old_records(self, now: float):
         """Purges expired timestamps to avoid memory growth."""
-        if now - self.last_cleanup > 300:  # Cleanup every 5 minutes
+        if now - self.last_cleanup > 180:  # Cleanup every 3 minutes
             cutoff = now - self.window_seconds
             for ip in list(self.requests_log.keys()):
                 self.requests_log[ip] = [t for t in self.requests_log[ip] if t > cutoff]
@@ -83,29 +98,31 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
             self.last_cleanup = now
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        # Ignore docs and health checks from strict rate limits
-        if request.url.path in ["/docs", "/openapi.json", "/health", "/api/v1/health", "/"]:
+        # Bypass rate limits for health, root status, and Swagger/OpenAPI docs
+        path = request.url.path
+        if path in ["/docs", "/openapi.json", "/health", "/api/v1/health", "/", "/favicon.ico"]:
             return await call_next(request)
 
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = self._get_client_ip(request)
         now = time.time()
         self._cleanup_old_records(now)
 
         timestamps = self.requests_log.setdefault(client_ip, [])
         cutoff = now - self.window_seconds
-        # Filter active timestamps
+        # Filter active timestamps within the sliding window
         timestamps = [t for t in timestamps if t > cutoff]
         self.requests_log[client_ip] = timestamps
 
         if len(timestamps) >= self.max_requests:
-            logger.warning(f"Rate limit exceeded for client IP: {client_ip} on {request.url.path}")
+            retry_after = max(1, int(self.window_seconds - (now - timestamps[0])))
+            logger.warning(f"Rate limit hit for IP: {client_ip} on {path}")
             return JSONResponse(
                 status_code=429,
                 content={
-                    "detail": "Rate limit exceeded. Too many requests. Please retry in a few moments.",
-                    "retry_after_seconds": int(self.window_seconds - (now - timestamps[0]))
+                    "detail": "Rate limit exceeded. Too many requests to the inference engine.",
+                    "retry_after_seconds": retry_after
                 },
-                headers={"Retry-After": str(self.window_seconds)}
+                headers={"Retry-After": str(retry_after)}
             )
 
         timestamps.append(now)
@@ -134,8 +151,21 @@ def sanitize_filename(filename: str) -> str:
     Allows only alphanumeric characters, underscores, hyphens, and standard extension.
     """
     base = filename.replace("\\", "/").split("/")[-1]
-    # Keep only safe characters
     sanitized = re.sub(r'[^a-zA-Z0-9_\-\.]', '', base)
     if not sanitized.endswith('.csv'):
         sanitized = f"{sanitized}.csv"
     return sanitized
+
+
+async def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
+    """
+    Optional API key dependency. If settings.API_KEY is configured,
+    enforces the key header on protected routes.
+    """
+    if settings.API_KEY:
+        if not api_key or api_key != settings.API_KEY:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid or missing API Key (X-API-KEY header required)"
+            )
+    return api_key

@@ -72,13 +72,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Exception Handler
+# Global Safe Exception Handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Global Error handling request {request.url.path}: {exc}")
+    logger.error(f"Unhandled exception handling request {request.url.path}: {exc}")
+    detail_msg = str(exc) if settings.DEBUG else "An internal server error occurred. Please contact system administrator."
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error", "error": str(exc)}
+        content={"detail": "Internal server error", "message": detail_msg}
     )
 
 # Root endpoint
@@ -95,7 +96,10 @@ async def root():
             "/health",
             "/metrics",
             "/model-info",
-            "/analytics"
+            "/analytics",
+            "/monitoring/metrics",
+            "/monitoring/drift",
+            "/monitoring/health"
         ]
     }
 

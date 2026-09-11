@@ -1,0 +1,34 @@
+# ==============================================================================
+# Render Blueprint — Telecom Customer Churn Prediction Engine
+# ==============================================================================
+# 1-Click Production Backend Deployment on Render (FastAPI + XGBoost Inference)
+# ==============================================================================
+
+services:
+  - type: web
+    name: churn-predictor-backend
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: APP_NAME
+        value: "Telecom Churn Prediction API"
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: DEBUG
+        value: "False"
+      - key: DEFAULT_THRESHOLD
+        value: "0.61"
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "300"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
+      - key: MAX_UPLOAD_SIZE_BYTES
+        value: "10485760"

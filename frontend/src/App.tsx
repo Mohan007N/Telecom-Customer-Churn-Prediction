@@ -6,6 +6,7 @@ import { SinglePrediction } from './pages/SinglePrediction'
 import { BatchPrediction } from './pages/BatchPrediction'
 import { PredictionHistory } from './pages/PredictionHistory'
 import { ModelPerformance } from './pages/ModelPerformance'
+import { ModelMonitoring } from './pages/ModelMonitoring'
 import { SettingsPage } from './pages/Settings'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="single" element={<SinglePrediction />} />
         <Route path="batch" element={<BatchPrediction />} />
         <Route path="history" element={<PredictionHistory />} />
+        <Route path="monitoring" element={<ModelMonitoring />} />
         <Route path="performance" element={<ModelPerformance />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

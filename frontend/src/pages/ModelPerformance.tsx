@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Award,
   BarChart3,
@@ -12,15 +13,34 @@ import {
   TrendingDown,
   TrendingUp,
   Info,
-  Target
+  Target,
+  Radio,
+  Zap,
+  AlertTriangle,
+  ArrowRight,
+  RefreshCw,
+  Play
 } from 'lucide-react'
-import { churnAPI } from '../services/api'
+import { churnAPI, MonitoringMetrics, DriftReport } from '../services/api'
 
 export const ModelPerformance: React.FC = () => {
   const [metrics, setMetrics] = useState<any>(null)
   const [modelInfo, setModelInfo] = useState<any>(null)
   const [analytics, setAnalytics] = useState<any>(null)
+  const [monitoringMetrics, setMonitoringMetrics] = useState<MonitoringMetrics | null>(null)
+  const [driftReport, setDriftReport] = useState<DriftReport | null>(null)
   const [simulatedThreshold, setSimulatedThreshold] = useState<number | null>(null)
+  const [isSimulating, setIsSimulating] = useState(false)
+
+  const fetchMonitoringData = () => {
+    churnAPI.getMonitoringMetrics()
+      .then((res) => setMonitoringMetrics(res.data))
+      .catch(() => {})
+
+    churnAPI.getMonitoringDrift()
+      .then((res) => setDriftReport(res.data))
+      .catch(() => {})
+  }
 
   useEffect(() => {
     churnAPI.getMetrics()
@@ -39,7 +59,21 @@ export const ModelPerformance: React.FC = () => {
     churnAPI.getAnalytics()
       .then((res) => setAnalytics(res.data))
       .catch(() => {})
+
+    fetchMonitoringData()
   }, [])
+
+  const handleSimulateQuick = async (drift: boolean) => {
+    setIsSimulating(true)
+    try {
+      await churnAPI.simulateTraffic(10, drift)
+      fetchMonitoringData()
+    } catch (err) {
+      console.error('Traffic simulation failed:', err)
+    } finally {
+      setIsSimulating(false)
+    }
+  }
 
   const cm = metrics?.confusion_matrix || null
   const totalChurners = cm ? (cm.TP + cm.FN) : 0
@@ -128,6 +162,9 @@ export const ModelPerformance: React.FC = () => {
     },
   ]
 
+  const maxPsi = driftReport?.max_psi_score ?? 0
+  const globalDriftStatus = driftReport?.global_drift_status ?? 'HEALTHY'
+
   return (
     <div className="space-y-8 pb-12 font-sans selection:bg-indigo-500/20 selection:text-indigo-950">
       {/* Header */}
@@ -147,13 +184,104 @@ export const ModelPerformance: React.FC = () => {
             {modelInfo?.model_name || 'Model Classification & Telemetry'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-            Verified performance metrics, 2x2 confusion matrix distribution, and interactive decision cutoff calibration.
+            Verified performance metrics, 2x2 confusion matrix distribution, interactive decision cutoff calibration, and live drift telemetry.
           </p>
         </div>
 
         <div className="text-xs font-mono text-slate-700 bg-white/90 px-3.5 py-2 rounded-xl border border-purple-100 shadow-xs flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-purple-500"></span>
           <span>Calibrated Cutoff: <strong className="text-purple-700 font-bold">τ = {optimalT !== null ? optimalT.toFixed(2) : '--'}</strong></span>
+        </div>
+      </div>
+
+      {/* Live Production Monitoring & Drift Alert Banner */}
+      <div className="card-enterprise p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/30 text-emerald-200 px-2.5 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
+                <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+                Live Telemetry Active
+              </span>
+              <span className="text-xs text-slate-400">•</span>
+              <span className="text-xs text-indigo-200 font-mono">
+                {monitoringMetrics ? `${monitoringMetrics.total_inferences.toLocaleString()} Requests Served` : 'Connecting...'}
+              </span>
+            </div>
+
+            <h3 className="text-lg sm:text-xl font-bold text-white">
+              Real-Time Model Health & PSI Drift Monitoring
+            </h3>
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Continuous Population Stability Index (PSI) drift tracking across customer cohort distributions, rolling P95 latencies, and production error rates.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => handleSimulateQuick(false)}
+              disabled={isSimulating}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              {isSimulating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              <span>Simulate Inferences</span>
+            </button>
+
+            <Link
+              to="/dashboard/monitoring"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white shadow-lg shadow-indigo-900/40 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Full Drift Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Live Monitoring Quick Metric Strips */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mt-6 pt-5 border-t border-white/10 font-mono text-xs">
+          <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="text-[10px] text-slate-400 uppercase font-bold">Max PSI Drift</div>
+            <div className="text-xl font-extrabold text-amber-300 mt-0.5">
+              {maxPsi.toFixed(3)}
+            </div>
+            <div className="text-[10px] text-slate-300 font-sans mt-0.5">
+              {globalDriftStatus === 'HEALTHY' ? 'Normal Stability' : 'Shift Detected'}
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="text-[10px] text-slate-400 uppercase font-bold">P95 Latency</div>
+            <div className="text-xl font-extrabold text-cyan-300 mt-0.5">
+              {monitoringMetrics?.latency_ms?.p95 !== undefined ? `${monitoringMetrics.latency_ms.p95} ms` : '--'}
+            </div>
+            <div className="text-[10px] text-slate-300 font-sans mt-0.5">
+              Avg: {monitoringMetrics?.latency_ms?.average || 0} ms
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="text-[10px] text-slate-400 uppercase font-bold">Inference RAM</div>
+            <div className="text-xl font-extrabold text-emerald-300 mt-0.5">
+              {monitoringMetrics?.memory_usage_mb || 0} MB
+            </div>
+            <div className="text-[10px] text-slate-300 font-sans mt-0.5">
+              Uptime: {monitoringMetrics?.uptime_formatted || '--'}
+            </div>
+          </div>
+
+          <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+            <div className="text-[10px] text-slate-400 uppercase font-bold">Observed Churn Rate</div>
+            <div className="text-xl font-extrabold text-indigo-300 mt-0.5">
+              {monitoringMetrics?.prediction_summary?.observed_churn_rate_pct !== undefined
+                ? `${monitoringMetrics.prediction_summary.observed_churn_rate_pct}%`
+                : '26.5%'}
+            </div>
+            <div className="text-[10px] text-slate-300 font-sans mt-0.5">
+              Baseline: 26.54%
+            </div>
+          </div>
         </div>
       </div>
 
