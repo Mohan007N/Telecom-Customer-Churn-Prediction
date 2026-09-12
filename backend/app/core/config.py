@@ -5,8 +5,10 @@ Application Configuration & Settings — Churn Predictor API
 """
 
 import os
+import json
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Union, Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Base directories
@@ -33,59 +35,54 @@ def resolve_file_path(filename: str, subfolder: str = "") -> str:
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = os.getenv("APP_NAME", "Churn Predictor API")
-    APP_VERSION: str = os.getenv("APP_VERSION", "1.0.0")
-    API_PREFIX: str = os.getenv("API_PREFIX", "/api/v1")
+    APP_NAME: str = "Churn Predictor API"
+    APP_VERSION: str = "1.0.0"
+    API_PREFIX: str = "/api/v1"
     
     # Server host & port
-    HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8000"))
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() in ("true", "1")
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    DEBUG: bool = False
 
     # Inference defaults
-    DEFAULT_THRESHOLD: float = float(os.getenv("DEFAULT_THRESHOLD", "0.61"))
+    DEFAULT_THRESHOLD: float = 0.61
 
     # Security & Rate Limiting
-    RATE_LIMIT_MAX_REQUESTS: int = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "300"))
-    RATE_LIMIT_WINDOW_SECONDS: int = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
-    MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(10 * 1024 * 1024))) # 10MB
-    API_KEY: Optional[str] = os.getenv("API_KEY", None)
+    RATE_LIMIT_MAX_REQUESTS: int = 300
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    MAX_UPLOAD_SIZE_BYTES: int = 10 * 1024 * 1024 # 10MB
+    API_KEY: Optional[str] = None
 
     # Raw Dataset Path
-    RAW_DATA_PATH: str = os.getenv(
-        "RAW_DATA_PATH",
-        resolve_file_path("WA_Fn-UseC_-Telco-Customer-Churn.csv")
-    )
+    RAW_DATA_PATH: str = resolve_file_path("WA_Fn-UseC_-Telco-Customer-Churn.csv")
     
     # Model Artifact Paths
-    MODEL_PATH: str = os.getenv(
-        "MODEL_PATH",
-        resolve_file_path("xgboost_churn_model.pkl", "models")
-    )
-    SCALER_PATH: str = os.getenv(
-        "SCALER_PATH",
-        resolve_file_path("scaler.pkl", "models")
-    )
-    META_PATH: str = os.getenv(
-        "META_PATH",
-        resolve_file_path("feature_metadata.json", "models")
-    )
-    METRICS_PATH: str = os.getenv(
-        "METRICS_PATH",
-        resolve_file_path("metrics.json", "reports")
-    )
+    MODEL_PATH: str = resolve_file_path("xgboost_churn_model.pkl", "models")
+    SCALER_PATH: str = resolve_file_path("scaler.pkl", "models")
+    META_PATH: str = resolve_file_path("feature_metadata.json", "models")
+    METRICS_PATH: str = resolve_file_path("metrics.json", "reports")
     
-    # CORS Origins (comma separated or * for open)
-    CORS_ORIGINS: List[str] = [
-        x.strip() for x in os.getenv("CORS_ORIGINS", "*").split(",") if x.strip()
-    ]
-    
-    # Output Directory for CSV downloads
-    OUTPUT_DIR: str = os.getenv(
-        "OUTPUT_DIR",
-        str(BACKEND_DIR / "temp_downloads")
-    )
+    # CORS Origins (accepts comma-separated string, JSON array, or '*')
+    CORS_ORIGINS: Union[str, List[str]] = "*"
 
-    model_config = SettingsConfigDict(case_sensitive=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            clean = v.strip()
+            if clean.startswith("[") and clean.endswith("]"):
+                try:
+                    return json.loads(clean)
+                except Exception:
+                    pass
+            return [x.strip() for x in clean.split(",") if x.strip()]
+        elif isinstance(v, list):
+            return v
+        return ["*"]
+
+    # Output Directory for CSV downloads
+    OUTPUT_DIR: str = str(BACKEND_DIR / "temp_downloads")
+
+    model_config = SettingsConfigDict(case_sensitive=True, extra="ignore")
 
 settings = Settings()
