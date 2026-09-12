@@ -15,10 +15,25 @@ import {
   TrendingDown,
   Layers,
   ArrowRight,
-  Zap
+  Zap,
+  HelpCircle
 } from 'lucide-react'
 import { churnAPI, getDownloadUrl } from '../services/api'
 import { addBatchPredictionRecords } from '../utils/predictionStorage'
+
+const SAMPLE_CSV_CONTENT = `customerID,gender,SeniorCitizen,Partner,Dependents,tenure,PhoneService,MultipleLines,InternetService,OnlineSecurity,OnlineBackup,DeviceProtection,TechSupport,StreamingTV,StreamingMovies,Contract,PaperlessBilling,PaymentMethod,MonthlyCharges,TotalCharges
+7590-VHVEG,Female,0,Yes,No,1,No,No phone service,DSL,No,Yes,No,No,No,No,Month-to-month,Yes,Electronic check,29.85,29.85
+5575-GNVDE,Male,0,No,No,34,Yes,No,DSL,Yes,No,Yes,No,No,No,One year,No,Mailed check,56.95,1889.5
+3668-QPYBK,Male,0,No,No,2,Yes,No,DSL,Yes,Yes,No,No,No,No,Month-to-month,Yes,Mailed check,53.85,108.15
+7795-CFOCW,Male,0,No,No,45,No,No phone service,DSL,Yes,No,Yes,Yes,No,No,One year,No,Bank transfer (automatic),42.3,1840.75
+9237-HQITU,Female,0,No,No,2,Yes,No,Fiber optic,No,No,No,No,No,No,Month-to-month,Yes,Electronic check,70.7,151.65
+9305-CDSKC,Female,0,No,No,8,Yes,Yes,Fiber optic,No,No,Yes,No,Yes,Yes,Month-to-month,Yes,Electronic check,99.65,820.5
+1452-KIOVK,Male,0,No,Yes,22,Yes,Yes,Fiber optic,No,Yes,No,No,Yes,No,Month-to-month,Yes,Credit card (automatic),89.1,1949.4
+6713-OKOMC,Female,0,No,No,10,No,No phone service,DSL,Yes,No,No,No,No,No,Month-to-month,No,Mailed check,29.75,301.9
+7892-POOKP,Female,0,Yes,No,28,Yes,Yes,Fiber optic,No,No,Yes,Yes,Yes,Yes,Month-to-month,Yes,Electronic check,104.8,3046.05
+6388-TABGU,Male,0,No,Yes,62,Yes,No,DSL,Yes,Yes,No,No,No,No,One year,No,Bank transfer (automatic),56.15,3487.95
+9763-GRSKD,Male,0,Yes,Yes,13,Yes,No,DSL,Yes,No,No,No,No,No,Month-to-month,Yes,Mailed check,49.95,587.45
+7469-LKBCI,Male,0,No,No,16,Yes,No,No,No internet service,No internet service,No internet service,No internet service,No internet service,No internet service,Two year,No,Credit card (automatic),18.95,326.8`
 
 export const BatchPrediction: React.FC = () => {
   const [file, setFile] = useState<File | null>(null)
@@ -76,25 +91,24 @@ export const BatchPrediction: React.FC = () => {
     }
   }
 
-  // Generate and load a sample verified Telco CSV for instant testing
+  // Generate and load sample CSV directly in browser memory
   const handleLoadSampleCSV = () => {
-    const csvContent = `customerID,gender,SeniorCitizen,Partner,Dependents,tenure,PhoneService,MultipleLines,InternetService,OnlineSecurity,OnlineBackup,DeviceProtection,TechSupport,StreamingTV,StreamingMovies,Contract,PaperlessBilling,PaymentMethod,MonthlyCharges,TotalCharges
-7590-VHVEG,Female,0,Yes,No,1,No,No phone service,DSL,No,Yes,No,No,No,No,Month-to-month,Yes,Electronic check,29.85,29.85
-5575-GNVDE,Male,0,No,No,34,Yes,No,DSL,Yes,No,Yes,No,No,No,One year,No,Mailed check,56.95,1889.5
-3668-QPYBK,Male,0,No,No,2,Yes,No,DSL,Yes,Yes,No,No,No,No,Month-to-month,Yes,Mailed check,53.85,108.15
-7795-CFOCW,Male,0,No,No,45,No,No phone service,DSL,Yes,No,Yes,Yes,No,No,One year,No,Bank transfer (automatic),42.3,1840.75
-9237-HQITU,Female,0,No,No,2,Yes,No,Fiber optic,No,No,No,No,No,No,Month-to-month,Yes,Electronic check,70.7,151.65
-9305-CDSKC,Female,0,No,No,8,Yes,Yes,Fiber optic,No,No,Yes,No,Yes,Yes,Month-to-month,Yes,Electronic check,99.65,820.5
-1452-KIOVK,Male,0,No,Yes,22,Yes,Yes,Fiber optic,No,Yes,No,No,Yes,No,Month-to-month,Yes,Credit card (automatic),89.1,1949.4
-6713-OKOMC,Female,0,No,No,10,No,No phone service,DSL,Yes,No,No,No,No,No,Month-to-month,No,Mailed check,29.75,301.9
-7892-POOKP,Female,0,Yes,No,28,Yes,Yes,Fiber optic,No,No,Yes,Yes,Yes,Yes,Month-to-month,Yes,Electronic check,104.8,3046.05
-6388-TABGU,Male,0,No,Yes,62,Yes,No,DSL,Yes,Yes,No,No,No,No,One year,No,Bank transfer (automatic),56.15,3487.95
-9763-GRSKD,Male,0,Yes,Yes,13,Yes,No,DSL,Yes,No,No,No,No,No,Month-to-month,Yes,Mailed check,49.95,587.45
-7469-LKBCI,Male,0,No,No,16,Yes,No,No,No internet service,No internet service,No internet service,No internet service,No internet service,No internet service,Two year,No,Credit card (automatic),18.95,326.8`
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([SAMPLE_CSV_CONTENT], { type: 'text/csv;charset=utf-8;' })
     const sampleFile = new File([blob], 'telco_benchmark_sample.csv', { type: 'text/csv' })
     handleFileSelect(sampleFile)
+  }
+
+  // Download sample CSV template directly to user's disk
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([SAMPLE_CSV_CONTENT], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'telco_batch_upload_template.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const handlePredict = async () => {
@@ -188,14 +202,26 @@ export const BatchPrediction: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleLoadSampleCSV}
-          className="btn-secondary text-xs py-2 px-4 shadow-xs hover:border-cyan-300 hover:text-cyan-700 hover:bg-cyan-50/40 cursor-pointer"
-        >
-          <FileSpreadsheet className="w-3.5 h-3.5 text-cyan-600" />
-          <span>Load Benchmark 12-Account CSV</span>
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="btn-secondary text-xs py-2 px-3.5 shadow-2xs hover:border-cyan-300 hover:text-cyan-700 hover:bg-cyan-50/40 cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-600" />
+            <span>Download CSV Template</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLoadSampleCSV}
+            className="btn-secondary text-xs py-2 px-3.5 shadow-2xs hover:border-cyan-300 hover:text-cyan-700 hover:bg-cyan-50/40 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-cyan-600" />
+            <span>Load 12-Account Sample</span>
+          </button>
+        </div>
       </div>
 
       {/* Upload Drag & Drop Area */}
@@ -233,6 +259,15 @@ export const BatchPrediction: React.FC = () => {
             <FileSpreadsheet className="w-4 h-4 text-cyan-600" />
             <span>Select Local File</span>
           </button>
+        </div>
+
+        {/* Required columns helper badge */}
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <HelpCircle className="w-3.5 h-3.5 text-cyan-600" />
+            <span>Essential Columns: <strong className="text-slate-800 font-mono">tenure, MonthlyCharges, TotalCharges, Contract</strong></span>
+          </div>
+          <span className="text-slate-400 font-mono">All 16 other Telco features auto-default if omitted</span>
         </div>
 
         {validationError && (

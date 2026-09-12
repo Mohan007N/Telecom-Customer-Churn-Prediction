@@ -30,12 +30,53 @@ REQUIRED_CSV_COLUMNS = [
     "tenure", "MonthlyCharges", "TotalCharges", "Contract"
 ]
 
-RECOMMENDED_COLUMNS = [
-    "gender", "SeniorCitizen", "Partner", "Dependents", "PhoneService",
-    "MultipleLines", "InternetService", "OnlineSecurity", "OnlineBackup",
-    "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies",
-    "PaperlessBilling", "PaymentMethod"
-]
+# Intelligent column normalization mapping
+COLUMN_ALIAS_MAP = {
+    "customerid": "customerID",
+    "customer_id": "customerID",
+    "customer id": "customerID",
+    "id": "customerID",
+    "tenure": "tenure",
+    "tenure_months": "tenure",
+    "months": "tenure",
+    "monthlycharges": "MonthlyCharges",
+    "monthly_charges": "MonthlyCharges",
+    "monthly charges": "MonthlyCharges",
+    "monthlycharge": "MonthlyCharges",
+    "totalcharges": "TotalCharges",
+    "total_charges": "TotalCharges",
+    "total charges": "TotalCharges",
+    "totalcharge": "TotalCharges",
+    "contract": "Contract",
+    "contract_type": "Contract",
+    "internetservice": "InternetService",
+    "internet_service": "InternetService",
+    "paymentmethod": "PaymentMethod",
+    "payment_method": "PaymentMethod",
+    "paperlessbilling": "PaperlessBilling",
+    "paperless_billing": "PaperlessBilling",
+    "seniorcitizen": "SeniorCitizen",
+    "senior_citizen": "SeniorCitizen",
+    "phoneservice": "PhoneService",
+    "phone_service": "PhoneService",
+    "multiplelines": "MultipleLines",
+    "multiple_lines": "MultipleLines",
+    "onlinesecurity": "OnlineSecurity",
+    "online_security": "OnlineSecurity",
+    "onlinebackup": "OnlineBackup",
+    "online_backup": "OnlineBackup",
+    "deviceprotection": "DeviceProtection",
+    "device_protection": "DeviceProtection",
+    "techsupport": "TechSupport",
+    "tech_support": "TechSupport",
+    "streamingtv": "StreamingTV",
+    "streaming_tv": "StreamingTV",
+    "streamingmovies": "StreamingMovies",
+    "streaming_movies": "StreamingMovies",
+    "gender": "gender",
+    "partner": "Partner",
+    "dependents": "Dependents"
+}
 
 def predict_single(input_data: SingleCustomerInput) -> PredictionOutput:
     start_time = time.perf_counter()
@@ -82,6 +123,17 @@ def process_batch_csv(file_bytes: bytes, filename: str) -> BatchPredictionRespon
                 status_code=400,
                 detail="Uploaded CSV file is empty."
             )
+
+        # Normalize column names intelligently (strip whitespace, lowercase lookup)
+        renamed_cols = {}
+        for col in df_raw.columns:
+            clean_name = str(col).strip()
+            lookup_key = clean_name.lower().replace("-", "_")
+            if lookup_key in COLUMN_ALIAS_MAP:
+                renamed_cols[col] = COLUMN_ALIAS_MAP[lookup_key]
+            else:
+                renamed_cols[col] = clean_name
+        df_raw = df_raw.rename(columns=renamed_cols)
 
         # 1. Validate required columns
         missing_cols = [col for col in REQUIRED_CSV_COLUMNS if col not in df_raw.columns]
@@ -137,8 +189,9 @@ def process_batch_csv(file_bytes: bytes, filename: str) -> BatchPredictionRespon
         df_export["Risk_Level"] = [r["risk_level"] for r in results_list]
 
         # Sanitize CSV values against formula injection
-        for col in df_export.select_dtypes(include=["object"]).columns:
-            df_export[col] = df_export[col].apply(sanitize_csv_formula_injection)
+        for col in df_export.columns:
+            if df_export[col].dtype == 'object':
+                df_export[col] = df_export[col].apply(sanitize_csv_formula_injection)
 
         # Save output CSV file for download
         os.makedirs(settings.OUTPUT_DIR, exist_ok=True)
